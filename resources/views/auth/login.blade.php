@@ -16,7 +16,7 @@
     <div class="w-full max-w-md">
         <div class="text-center mb-8">
             <a href="{{ url('/') }}" class="inline-block mb-4">
-                <img src="{{ asset('images/logo.png') }}" alt="REAL BRICK" class="h-20 w-auto mx-auto" width="160" height="80">
+                <img src="{{ asset('images/logo-auth.png') }}" alt="REAL BRICK" class="h-12 w-auto mx-auto block" width="96" height="48">
             </a>
             <h1 class="text-2xl font-semibold text-admin-primary">База Диллеров</h1>
             <p class="text-admin-muted mt-1">Войдите в панель управления</p>
