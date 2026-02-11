@@ -6,7 +6,7 @@
 @section('content')
     <div class="flex justify-between items-center mb-6">
         <p class="text-admin-muted text-sm">Перетаскивайте карточки между колонками для смены стадии</p>
-        <a href="{{ route('dealer.objects.create') }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-admin-accent text-white font-medium hover:bg-sky-600 transition shrink-0">
+        <a href="{{ route('dealer.objects.create') }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-admin-accent text-white font-medium hover:bg-admin-accent-hover transition shrink-0">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>

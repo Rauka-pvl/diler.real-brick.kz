@@ -38,7 +38,7 @@
                         </button>
                     </div>
                 </div>
-                <button type="submit" class="w-full py-3 rounded-xl bg-admin-accent text-white font-medium hover:bg-sky-600 transition">
+                <button type="submit" class="w-full py-3 rounded-xl bg-admin-accent text-white font-medium hover:bg-admin-accent-hover transition">
                     Сохранить пароль
                 </button>
             </form>

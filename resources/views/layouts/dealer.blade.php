@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Кабинет') — База Диллеров</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
@@ -14,11 +15,7 @@
         <aside class="w-64 shrink-0 bg-admin-sidebar flex flex-col">
             <div class="p-6 border-b border-white/10">
                 <a href="{{ route('dealer.cabinet') }}" class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-admin-accent flex items-center justify-center">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                        </svg>
-                    </div>
+                    <img src="{{ asset('images/logo.png') }}" alt="REAL BRICK" class="w-10 h-10 rounded-xl object-contain shrink-0" width="40" height="40">
                     <div>
                         <span class="font-semibold text-white block">Кабинет диллера</span>
                         <span class="text-xs text-slate-400">Личный раздел</span>

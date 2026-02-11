@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
     <title>Вход — {{ config('app.name') }}</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=dm-sans:400,500,600,700" rel="stylesheet" />
@@ -14,6 +15,9 @@
 <body class="min-h-screen bg-admin-bg flex items-center justify-center p-4">
     <div class="w-full max-w-md">
         <div class="text-center mb-8">
+            <a href="{{ url('/') }}" class="inline-block mb-4">
+                <img src="{{ asset('images/logo.png') }}" alt="REAL BRICK" class="h-20 w-auto mx-auto" width="160" height="80">
+            </a>
             <h1 class="text-2xl font-semibold text-admin-primary">База Диллеров</h1>
             <p class="text-admin-muted mt-1">Войдите в панель управления</p>
         </div>

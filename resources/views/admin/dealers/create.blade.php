@@ -101,7 +101,7 @@
                 </div>
             </div>
             <div class="flex gap-3 pt-2">
-                <button type="submit" class="px-5 py-2.5 rounded-xl bg-admin-accent text-white font-medium hover:bg-sky-600 transition">Сохранить</button>
+                <button type="submit" class="px-5 py-2.5 rounded-xl bg-admin-accent text-white font-medium hover:bg-admin-accent-hover transition">Сохранить</button>
                 <a href="{{ route('admin.dealers.index') }}" class="px-5 py-2.5 rounded-xl border border-admin-border text-admin-fg font-medium hover:bg-slate-50 transition">Отмена</a>
             </div>
         </form>

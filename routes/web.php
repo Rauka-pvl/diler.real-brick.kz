@@ -14,6 +14,11 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Http;
 
 Route::get('/', function () {
+    if (auth()->check()) {
+        return auth()->user()->isAdmin()
+            ? redirect()->route('admin.dashboard')
+            : redirect()->route('dealer.cabinet');
+    }
     return redirect()->route('login');
 });
 

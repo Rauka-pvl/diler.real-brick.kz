@@ -7,17 +7,18 @@
 
 @theme {
     --font-sans: 'DM Sans', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
-    /* Admin: прохладная авто-палитра */
-    --color-admin-bg: #f0f9ff;
+    /* REAL BRICK: #ce6b4b терракот, #222226 тёмный */
+    --color-admin-bg: #f8f7f6;
     --color-admin-surface: #ffffff;
-    --color-admin-sidebar: #0f172a;
-    --color-admin-sidebar-hover: #1e293b;
-    --color-admin-primary: #0c4a6e;
-    --color-admin-accent: #0ea5e9;
-    --color-admin-accent-soft: #e0f2fe;
-    --color-admin-fg: #0f172a;
-    --color-admin-muted: #64748b;
-    --color-admin-border: #e2e8f0;
+    --color-admin-sidebar: #222226;
+    --color-admin-sidebar-hover: #2d2d32;
+    --color-admin-primary: #222226;
+    --color-admin-accent: #ce6b4b;
+    --color-admin-accent-hover: #b85a3f;
+    --color-admin-accent-soft: #fceee9;
+    --color-admin-fg: #222226;
+    --color-admin-muted: #6b6b70;
+    --color-admin-border: #e5e4e3;
     --color-admin-success: #059669;
     --color-admin-danger: #dc2626;
     --shadow-admin-card: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
@@ -30,6 +31,7 @@
     .bg-admin-sidebar { background-color: var(--color-admin-sidebar); }
     .bg-admin-sidebar-hover:hover { background-color: var(--color-admin-sidebar-hover); }
     .bg-admin-accent { background-color: var(--color-admin-accent); }
+    .hover\:bg-admin-accent-hover:hover { background-color: var(--color-admin-accent-hover); }
     .bg-admin-accent-soft { background-color: var(--color-admin-accent-soft); }
     .text-admin-primary { color: var(--color-admin-primary); }
     .text-admin-accent { color: var(--color-admin-accent); }
@@ -38,7 +40,7 @@
     .text-admin-inverse { color: #fff; }
     .border-admin-border { border-color: var(--color-admin-border); }
     .shadow-admin-card { box-shadow: var(--shadow-admin-card); }
-    .input-admin:focus { border-color: var(--color-admin-accent); box-shadow: 0 0 0 2px rgb(14 165 233 / 0.2); }
+    .input-admin:focus { border-color: var(--color-admin-accent); box-shadow: 0 0 0 2px rgb(206 107 75 / 0.2); }
     .btn-admin-primary { background-color: var(--color-admin-accent); color: #fff; }
-    .btn-admin-primary:hover { background-color: #0284c7; }
+    .btn-admin-primary:hover { background-color: #b85a3f; }
 }
