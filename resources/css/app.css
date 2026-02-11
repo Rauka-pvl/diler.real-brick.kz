@@ -1,0 +1,44 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@theme {
+    --font-sans: 'DM Sans', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+    /* Admin: прохладная авто-палитра */
+    --color-admin-bg: #f0f9ff;
+    --color-admin-surface: #ffffff;
+    --color-admin-sidebar: #0f172a;
+    --color-admin-sidebar-hover: #1e293b;
+    --color-admin-primary: #0c4a6e;
+    --color-admin-accent: #0ea5e9;
+    --color-admin-accent-soft: #e0f2fe;
+    --color-admin-fg: #0f172a;
+    --color-admin-muted: #64748b;
+    --color-admin-border: #e2e8f0;
+    --color-admin-success: #059669;
+    --color-admin-danger: #dc2626;
+    --shadow-admin-card: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+    --radius-admin: 0.75rem;
+}
+
+@layer components {
+    .bg-admin-bg { background-color: var(--color-admin-bg); }
+    .bg-admin-surface { background-color: var(--color-admin-surface); }
+    .bg-admin-sidebar { background-color: var(--color-admin-sidebar); }
+    .bg-admin-sidebar-hover:hover { background-color: var(--color-admin-sidebar-hover); }
+    .bg-admin-accent { background-color: var(--color-admin-accent); }
+    .bg-admin-accent-soft { background-color: var(--color-admin-accent-soft); }
+    .text-admin-primary { color: var(--color-admin-primary); }
+    .text-admin-accent { color: var(--color-admin-accent); }
+    .text-admin-fg { color: var(--color-admin-fg); }
+    .text-admin-muted { color: var(--color-admin-muted); }
+    .text-admin-inverse { color: #fff; }
+    .border-admin-border { border-color: var(--color-admin-border); }
+    .shadow-admin-card { box-shadow: var(--shadow-admin-card); }
+    .input-admin:focus { border-color: var(--color-admin-accent); box-shadow: 0 0 0 2px rgb(14 165 233 / 0.2); }
+    .btn-admin-primary { background-color: var(--color-admin-accent); color: #fff; }
+    .btn-admin-primary:hover { background-color: #0284c7; }
+}
