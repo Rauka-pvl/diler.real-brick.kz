@@ -3,13 +3,18 @@
 use App\Http\Controllers\Admin\ClientController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DealerController;
+use App\Http\Controllers\Admin\ObjectController as AdminObjectController;
+use App\Http\Controllers\Admin\DealerPackageController as AdminDealerPackageController;
+use App\Http\Controllers\Admin\PromoMaterialController as AdminPromoMaterialController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Dealer\CabinetController;
 use App\Http\Controllers\Dealer\ChangePasswordController;
 use App\Http\Controllers\Dealer\ClientController as DealerClientController;
 use App\Http\Controllers\Dealer\ObjectController as DealerObjectController;
 use App\Http\Controllers\Dealer\ProductController as DealerProductController;
+use App\Http\Controllers\Dealer\DealerPackageController as DealerDealerPackageController;
 use App\Http\Controllers\Dealer\ProfileController;
+use App\Http\Controllers\Dealer\PromoMaterialController as DealerPromoMaterialController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Http;
 
@@ -72,8 +77,14 @@ Route::post('logout', [LoginController::class, 'destroy'])->name('logout')->midd
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', fn() => redirect()->route('admin.dashboard'));
     Route::get('dashboard', DashboardController::class)->name('dashboard');
+    Route::get('dealers/search', [DealerController::class, 'search'])->name('dealers.search');
     Route::resource('dealers', DealerController::class);
+    Route::get('clients/search', [ClientController::class, 'search'])->name('clients.search');
     Route::resource('clients', ClientController::class);
+    Route::get('objects', [AdminObjectController::class, 'index'])->name('objects.index');
+    Route::get('objects/{object}', [AdminObjectController::class, 'show'])->name('objects.show');
+    Route::resource('promo-materials', AdminPromoMaterialController::class)->only(['index', 'create', 'store', 'destroy']);
+    Route::get('dealer-package', AdminDealerPackageController::class)->name('dealer-package');
 });
 
 Route::middleware(['auth', 'dealer'])->prefix('dealer')->name('dealer.')->group(function () {
@@ -88,4 +99,7 @@ Route::middleware(['auth', 'dealer'])->prefix('dealer')->name('dealer.')->group(
     Route::resource('objects', DealerObjectController::class);
     Route::get('products/catalog-children', [DealerProductController::class, 'catalogChildren'])->name('products.catalog-children');
     Route::get('products', [DealerProductController::class, 'index'])->name('products.index');
+    Route::get('promo-materials', [DealerPromoMaterialController::class, 'index'])->name('promo-materials.index');
+    Route::get('promo-materials/{promoMaterial}/download', [DealerPromoMaterialController::class, 'download'])->name('promo-materials.download');
+    Route::get('dealer-package', DealerDealerPackageController::class)->name('dealer-package');
 });

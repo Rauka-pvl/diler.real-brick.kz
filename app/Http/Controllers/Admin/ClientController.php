@@ -68,6 +68,14 @@ class ClientController extends Controller
         return redirect()->route('admin.clients.index')->with('success', 'Клиент успешно добавлен.');
     }
 
+    public function show(Client $client)
+    {
+        $client->load('dealer');
+        $objects = \App\Models\ProjectObject::where('client_id', $client->id)->with('dealer')->orderBy('updated_at', 'desc')->get();
+
+        return view('admin.clients.show', compact('client', 'objects'));
+    }
+
     public function edit(Client $client)
     {
         $dealers = Dealer::orderBy('name')->get();
@@ -102,5 +110,32 @@ class ClientController extends Controller
         $client->delete();
 
         return redirect()->route('admin.clients.index')->with('success', 'Клиент удалён.');
+    }
+
+    /** Поиск клиентов для автодополнения (объекты) */
+    public function search(Request $request)
+    {
+        $q = trim($request->get('q', ''));
+        if (strlen($q) < 2) {
+            return response()->json([]);
+        }
+        $query = Client::query()->with('dealer:id,name')->orderBy('name')
+            ->where(function ($qry) use ($q) {
+                $qry->where('name', 'like', "%{$q}%")
+                    ->orWhere('email', 'like', "%{$q}%")
+                    ->orWhere('phone', 'like', "%{$q}%")
+                    ->orWhere('contact_person_name', 'like', "%{$q}%")
+                    ->orWhere('city', 'like', "%{$q}%");
+            });
+        if ($request->filled('dealer_id')) {
+            $query->where('dealer_id', $request->dealer_id);
+        }
+        $clients = $query->limit(15)->get()
+            ->map(fn ($c) => [
+                'id' => $c->id,
+                'name' => $c->name,
+                'sub' => $c->dealer ? $c->dealer->name : ($c->city ?: null),
+            ]);
+        return response()->json($clients);
     }
 }

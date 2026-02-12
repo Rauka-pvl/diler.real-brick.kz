@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Client;
 use App\Models\Dealer;
+use App\Models\ProjectObject;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -86,6 +88,20 @@ class DealerController extends Controller
         return redirect()->route('admin.dealers.index')->with('success', 'Диллер успешно добавлен.');
     }
 
+    public function show(Dealer $dealer)
+    {
+        $clientsCount = Client::where('dealer_id', $dealer->id)->count();
+        $objects = ProjectObject::where('dealer_id', $dealer->id)->with('client')->orderBy('updated_at', 'desc')->get();
+        $clients = Client::where('dealer_id', $dealer->id)->orderBy('name')->get();
+        $byStage = [
+            'negotiations' => $objects->where('stage', 'negotiations')->count(),
+            'contract_signed' => $objects->where('stage', 'contract_signed')->count(),
+            'completed' => $objects->where('stage', 'completed')->count(),
+        ];
+
+        return view('admin.dealers.show', compact('dealer', 'clientsCount', 'objects', 'clients', 'byStage'));
+    }
+
     public function edit(Dealer $dealer)
     {
         return view('admin.dealers.edit', compact('dealer'));
@@ -147,5 +163,27 @@ class DealerController extends Controller
         $dealer->delete();
 
         return redirect()->route('admin.dealers.index')->with('success', 'Диллер удалён.');
+    }
+
+    /** Поиск диллеров для автодополнения (объекты) */
+    public function search(Request $request)
+    {
+        $q = $request->get('q', '');
+        $q = trim($q);
+        if (strlen($q) < 2) {
+            return response()->json([]);
+        }
+        $dealers = Dealer::query()
+            ->orderBy('name')
+            ->where(function ($query) use ($q) {
+                $query->where('name', 'like', "%{$q}%")
+                    ->orWhere('company', 'like', "%{$q}%")
+                    ->orWhere('contact_person_name', 'like', "%{$q}%")
+                    ->orWhere('city', 'like', "%{$q}%");
+            })
+            ->limit(15)
+            ->get(['id', 'name', 'company', 'city'])
+            ->map(fn ($d) => ['id' => $d->id, 'name' => $d->name, 'sub' => implode(' · ', array_filter([$d->company, $d->city]))]);
+        return response()->json($dealers);
     }
 }

@@ -41,6 +41,24 @@
                     </svg>
                     <span>Клиенты</span>
                 </a>
+                <a href="{{ route('admin.objects.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-admin-sidebar-hover hover:text-white transition {{ request()->routeIs('admin.objects.*') ? 'bg-white/10 text-white' : '' }}">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                    </svg>
+                    <span>Объекты</span>
+                </a>
+                <a href="{{ route('admin.promo-materials.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-admin-sidebar-hover hover:text-white transition {{ request()->routeIs('admin.promo-materials.*') ? 'bg-white/10 text-white' : '' }}">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                    </svg>
+                    <span>Промо материалы</span>
+                </a>
+                <a href="{{ route('admin.dealer-package') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-admin-sidebar-hover hover:text-white transition {{ request()->routeIs('admin.dealer-package') ? 'bg-white/10 text-white' : '' }}">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                    </svg>
+                    <span>Диллерский пакет</span>
+                </a>
             </nav>
         </aside>
 

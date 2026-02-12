@@ -47,6 +47,18 @@
                     </svg>
                     <span>Товары</span>
                 </a>
+                <a href="{{ route('dealer.promo-materials.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-admin-sidebar-hover hover:text-white transition {{ request()->routeIs('dealer.promo-materials.*') ? 'bg-white/10 text-white' : '' }}">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                    </svg>
+                    <span>Промо материалы</span>
+                </a>
+                <a href="{{ route('dealer.dealer-package') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-admin-sidebar-hover hover:text-white transition {{ request()->routeIs('dealer.dealer-package') ? 'bg-white/10 text-white' : '' }}">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                    </svg>
+                    <span>Диллерский пакет</span>
+                </a>
                 <a href="{{ route('dealer.profile.edit') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-admin-sidebar-hover hover:text-white transition {{ request()->routeIs('dealer.profile.*') ? 'bg-white/10 text-white' : '' }}">
                     <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
