@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Dealer;
 use App\Http\Controllers\Controller;
 use App\Models\Client;
 use App\Models\ProjectObject;
+use App\Models\ProjectObjectProduct;
+use App\Services\Bitrix24CatalogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -48,13 +50,35 @@ class ObjectController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(Bitrix24CatalogService $catalog)
     {
         if (auth()->user()->must_change_password) {
             return redirect()->route('dealer.change-password');
         }
 
-        return view('dealer.objects.create');
+        $dealer = $this->getDealer();
+        $allClients = Client::where('dealer_id', $dealer->id)->orderBy('name')->get()
+            ->map(fn ($c) => ['id' => $c->id, 'name' => $c->name, 'sub' => $c->city]);
+
+        $sections = $this->getCatalogSections($catalog);
+
+        return view('dealer.objects.create', compact('allClients', 'sections'));
+    }
+
+    protected function getCatalogSections(Bitrix24CatalogService $catalog): array
+    {
+        try {
+            $rootId = (int) config('services.bitrix24.root_section_id', 22);
+            $sections = $catalog->getSections($rootId);
+            return array_values(array_filter(array_map(function ($s) {
+                $id = (int) ($s['id'] ?? $s['ID'] ?? 0);
+                $name = $s['name'] ?? $s['NAME'] ?? 'Без названия';
+                return $id ? ['id' => $id, 'name' => $name] : null;
+            }, $sections)));
+        } catch (\Throwable $e) {
+            report($e);
+            return [];
+        }
     }
 
     public function store(Request $request)
@@ -92,6 +116,10 @@ class ObjectController extends Controller
             'planned_delivery_date' => ['nullable', 'date'],
             'title_page' => ['nullable', 'file', 'max:10240'],
             'visualization' => ['nullable', 'file', 'max:10240'],
+            'product_items' => ['nullable', 'array'],
+            'product_items.*.bitrix_product_id' => ['required', 'string', 'max:50'],
+            'product_items.*.product_name' => ['required', 'string', 'max:500'],
+            'product_items.*.quantity' => ['required', 'numeric', 'min:0.01'],
         ]);
 
         if ($validated['client_id'] ?? null) {
@@ -99,9 +127,18 @@ class ObjectController extends Controller
         }
 
         $validated['dealer_id'] = $dealer->id;
-        unset($validated['title_page'], $validated['visualization']);
+        $productItems = $validated['product_items'] ?? [];
+        unset($validated['title_page'], $validated['visualization'], $validated['product_items']);
 
         $obj = ProjectObject::create($validated);
+
+        foreach ($productItems as $item) {
+            $obj->objectProducts()->create([
+                'bitrix_product_id' => $item['bitrix_product_id'],
+                'product_name' => $item['product_name'],
+                'quantity' => $item['quantity'],
+            ]);
+        }
 
         if ($request->hasFile('title_page')) {
             $obj->update(['title_page_path' => $request->file('title_page')->store('project-objects', 'public')]);
@@ -120,7 +157,7 @@ class ObjectController extends Controller
         }
 
         $obj = $this->findObject($object);
-        $obj->load('client');
+        $obj->load(['client', 'objectProducts']);
 
         return view('dealer.objects.show', compact('obj'));
     }
@@ -132,9 +169,14 @@ class ObjectController extends Controller
         }
 
         $obj = $this->findObject($object);
-        $obj->load('client');
+        $obj->load(['client', 'objectProducts']);
+        $dealer = $this->getDealer();
+        $allClients = Client::where('dealer_id', $dealer->id)->orderBy('name')->get()
+            ->map(fn ($c) => ['id' => $c->id, 'name' => $c->name, 'sub' => $c->city]);
 
-        return view('dealer.objects.edit', compact('obj'));
+        $sections = $this->getCatalogSections(app(Bitrix24CatalogService::class));
+
+        return view('dealer.objects.edit', compact('obj', 'allClients', 'sections'));
     }
 
     public function update(Request $request, int $object)
@@ -173,6 +215,10 @@ class ObjectController extends Controller
             'planned_delivery_date' => ['nullable', 'date'],
             'title_page' => ['nullable', 'file', 'max:10240'],
             'visualization' => ['nullable', 'file', 'max:10240'],
+            'product_items' => ['nullable', 'array'],
+            'product_items.*.bitrix_product_id' => ['required', 'string', 'max:50'],
+            'product_items.*.product_name' => ['required', 'string', 'max:500'],
+            'product_items.*.quantity' => ['required', 'numeric', 'min:0.01'],
         ]);
 
         if (($validated['client_id'] ?? null) && (int) $validated['client_id'] > 0) {
@@ -181,8 +227,18 @@ class ObjectController extends Controller
             $validated['client_id'] = null;
         }
 
-        unset($validated['title_page'], $validated['visualization']);
+        $productItems = $validated['product_items'] ?? [];
+        unset($validated['title_page'], $validated['visualization'], $validated['product_items']);
         $obj->update($validated);
+
+        $obj->objectProducts()->delete();
+        foreach ($productItems as $item) {
+            $obj->objectProducts()->create([
+                'bitrix_product_id' => $item['bitrix_product_id'],
+                'product_name' => $item['product_name'],
+                'quantity' => $item['quantity'],
+            ]);
+        }
 
         if ($request->hasFile('title_page')) {
             if ($obj->title_page_path) {

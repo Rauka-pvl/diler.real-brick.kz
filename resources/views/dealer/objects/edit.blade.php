@@ -169,6 +169,62 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="sm:col-span-2 border-t border-admin-border pt-6">
+                    <h4 class="text-sm font-semibold text-admin-fg mb-4">Товары</h4>
+                    <p class="text-admin-muted text-sm mb-4">Раскройте раздел каталога и нажмите на товар, чтобы добавить. Укажите количество.</p>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-slate-50/80 rounded-xl border border-admin-border p-4 max-h-80 overflow-auto">
+                            <p class="text-xs text-admin-muted mb-2">Каталог</p>
+                            @if(!empty($sections))
+                                <ul class="tree space-y-0" id="object-catalog-tree">
+                                    @foreach($sections as $section)
+                                        <li class="tree-node object-tree-node" data-section-id="{{ $section['id'] }}" data-level="0" data-loaded="0">
+                                            <div class="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-slate-100 group" style="padding-left: 8px;">
+                                                <button type="button" class="tree-toggle p-0.5 rounded text-admin-muted hover:bg-slate-200 flex-shrink-0" aria-expanded="false">
+                                                    <svg class="w-4 h-4 transition-transform tree-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                                </button>
+                                                <span class="font-medium text-admin-fg text-sm">{{ $section['name'] }}</span>
+                                            </div>
+                                            <div class="tree-children-wrap hidden border-l border-admin-border ml-3 pl-2" style="margin-left: 20px;" data-section-id="{{ $section['id'] }}"></div>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            @else
+                                <p class="text-admin-muted text-sm py-2">Разделы каталога не загружены.</p>
+                            @endif
+                        </div>
+                        <div>
+                            <p class="text-xs text-admin-muted mb-2">Выбранные товары</p>
+                            <div class="border border-admin-border rounded-xl overflow-hidden">
+                                <table class="w-full text-sm">
+                                    <thead class="bg-slate-50 border-b border-admin-border">
+                                        <tr>
+                                            <th class="text-left py-2 px-3 font-medium text-admin-fg">Товар</th>
+                                            <th class="text-left py-2 px-3 font-medium text-admin-fg w-24">Кол-во</th>
+                                            <th class="w-10"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="object-products-tbody">
+                                        @forelse($obj->objectProducts as $idx => $op)
+                                            <tr class="border-t border-admin-border">
+                                                <input type="hidden" name="product_items[{{ $idx }}][bitrix_product_id]" value="{{ $op->bitrix_product_id }}">
+                                                <input type="hidden" name="product_items[{{ $idx }}][product_name]" value="{{ e($op->product_name) }}">
+                                                <td class="py-2 px-3 text-admin-fg">{{ $op->product_name }}</td>
+                                                <td class="py-2 px-3"><input type="number" name="product_items[{{ $idx }}][quantity]" value="{{ old('product_items.'.$idx.'.quantity', $op->quantity) }}" min="0.01" step="0.01" class="w-full px-2 py-1.5 rounded border border-admin-border text-sm"></td>
+                                                <td class="py-2 px-1"><button type="button" class="object-product-remove p-1.5 rounded text-admin-muted hover:bg-red-50 hover:text-red-600" title="Удалить">&times;</button></td>
+                                            </tr>
+                                        @empty
+                                            <tr id="object-products-empty" class="text-admin-muted text-sm">
+                                                <td colspan="3" class="py-4 px-3">Добавьте товары из каталога</td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="flex gap-3 pt-2">
@@ -181,31 +237,159 @@
     @push('scripts')
     <script>
     (function() {
-        const searchUrl = '{{ route("dealer.objects.clients-search") }}';
-        const input = document.getElementById('client_search');
-        const hidden = document.getElementById('client_id');
-        const results = document.getElementById('client_results');
-        let timeout = null;
-        input.addEventListener('input', function() {
-            const q = this.value.trim();
-            if (!q) { results.classList.add('hidden'); hidden.value = ''; return; }
-            clearTimeout(timeout);
-            timeout = setTimeout(function() {
-                fetch(searchUrl + '?q=' + encodeURIComponent(q)).then(function(r) { return r.json(); })
-                    .then(function(list) {
-                        results.innerHTML = list.length ? '' : '<div class="p-3 text-admin-muted text-sm">Ничего не найдено</div>';
-                        list.forEach(function(c) {
-                            const div = document.createElement('div');
-                            div.className = 'px-4 py-2 hover:bg-slate-50 cursor-pointer border-b border-admin-border last:border-0';
-                            div.textContent = c.name;
-                            div.addEventListener('click', function() { hidden.value = c.id; input.value = c.name; results.classList.add('hidden'); });
-                            results.appendChild(div);
-                        });
-                        results.classList.remove('hidden');
-                    });
-            }, 200);
+        var allClients = @json($allClients);
+        var input = document.getElementById('client_search');
+        var hidden = document.getElementById('client_id');
+        var results = document.getElementById('client_results');
+
+        function escapeHtml(s) { return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+        function matchQuery(item, q) {
+            if (!q) return true;
+            var text = (item.name + ' ' + (item.sub || '')).toLowerCase();
+            return text.indexOf(q.toLowerCase()) !== -1;
+        }
+
+        function showSuggestions(items) {
+            if (!items.length) {
+                results.innerHTML = '<div class="p-3 text-admin-muted text-sm">Ничего не найдено</div>';
+            } else {
+                results.innerHTML = items.slice(0, 50).map(function(c) {
+                    return '<button type="button" class="w-full text-left px-4 py-2.5 hover:bg-slate-100 transition border-b border-admin-border last:border-0" data-id="' + c.id + '" data-name="' + escapeHtml(c.name) + '">' +
+                        '<span class="font-medium">' + escapeHtml(c.name) + '</span>' +
+                        (c.sub ? '<span class="text-admin-muted text-sm block">' + escapeHtml(c.sub) + '</span>' : '') + '</button>';
+                }).join('');
+            }
+            results.classList.remove('hidden');
+        }
+
+        function filterClients() {
+            var q = (input.value || '').trim();
+            if (q === '') hidden.value = '';
+            var list = q ? allClients.filter(function(c) { return matchQuery(c, q); }) : allClients;
+            showSuggestions(list);
+        }
+
+        input.addEventListener('input', filterClients);
+        input.addEventListener('focus', filterClients);
+        input.addEventListener('blur', function() {
+            setTimeout(function() {
+                if (!results.contains(document.activeElement)) results.classList.add('hidden');
+            }, 150);
         });
-        document.addEventListener('click', function(e) { if (!e.target.closest('#client-search-wrap')) results.classList.add('hidden'); });
+        results.addEventListener('click', function(e) {
+            var btn = e.target.closest('button[data-id]');
+            if (!btn) return;
+            hidden.value = btn.dataset.id;
+            input.value = btn.dataset.name || '';
+            results.classList.add('hidden');
+        });
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#client-search-wrap')) results.classList.add('hidden');
+        });
+    })();
+
+    (function() {
+        var childrenUrl = '{{ route("dealer.products.catalog-children") }}';
+        var tree = document.getElementById('object-catalog-tree');
+        var tbody = document.getElementById('object-products-tbody');
+        var productIndex = {{ $obj->objectProducts->count() }};
+        var emptyRowHtml = '<tr id="object-products-empty" class="text-admin-muted text-sm"><td colspan="3" class="py-4 px-3">Добавьте товары из каталога</td></tr>';
+
+        function escapeHtml(s) {
+            if (!s) return '';
+            var div = document.createElement('div');
+            div.textContent = s;
+            return div.innerHTML;
+        }
+        function addProduct(bitrixId, productName) {
+            if (!bitrixId || !productName) return;
+            var emptyRow = document.getElementById('object-products-empty');
+            if (emptyRow) emptyRow.remove();
+            var tr = document.createElement('tr');
+            tr.className = 'border-t border-admin-border';
+            tr.innerHTML = '<input type="hidden" name="product_items[' + productIndex + '][bitrix_product_id]" value="' + escapeHtml(String(bitrixId)) + '">' +
+                '<input type="hidden" name="product_items[' + productIndex + '][product_name]" value="' + escapeHtml(productName) + '">' +
+                '<td class="py-2 px-3 text-admin-fg">' + escapeHtml(productName) + '</td>' +
+                '<td class="py-2 px-3"><input type="number" name="product_items[' + productIndex + '][quantity]" value="1" min="0.01" step="0.01" class="w-full px-2 py-1.5 rounded border border-admin-border text-sm"></td>' +
+                '<td class="py-2 px-1"><button type="button" class="object-product-remove p-1.5 rounded text-admin-muted hover:bg-red-50 hover:text-red-600" title="Удалить">&times;</button></td>';
+            tbody.appendChild(tr);
+            productIndex++;
+            tr.querySelector('.object-product-remove').addEventListener('click', function() {
+                tr.remove();
+                if (tbody.querySelectorAll('input[name^="product_items"]').length === 0) tbody.insertAdjacentHTML('beforeend', emptyRowHtml);
+            });
+        }
+        tbody.querySelectorAll('.object-product-remove').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var tr = btn.closest('tr');
+                if (tr) {
+                    tr.remove();
+                    if (tbody.querySelectorAll('input[name^="product_items"]').length === 0) tbody.insertAdjacentHTML('beforeend', emptyRowHtml);
+                }
+            });
+        });
+
+        if (tree) {
+            function renderLoader(wrap) { wrap.innerHTML = '<div class="py-2 px-2 text-admin-muted text-sm">Загрузка…</div>'; }
+            function renderSection(section, level) {
+                var pl = 8 + level * 16;
+                return '<li class="tree-node object-tree-node" data-section-id="' + section.id + '" data-level="' + level + '" data-loaded="0">' +
+                    '<div class="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-slate-100 group" style="padding-left: ' + pl + 'px;">' +
+                    '<button type="button" class="tree-toggle p-0.5 rounded text-admin-muted hover:bg-slate-200 flex-shrink-0"><svg class="w-4 h-4 transition-transform tree-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></button>' +
+                    '<span class="font-medium text-admin-fg text-sm">' + escapeHtml(section.name) + '</span></div>' +
+                    '<div class="tree-children-wrap hidden border-l border-admin-border ml-3 pl-2" style="margin-left: ' + (20 + level * 16) + 'px;" data-section-id="' + section.id + '"></div></li>';
+            }
+            function renderProduct(product, level) {
+                var pl = 8 + (level + 1) * 16;
+                return '<li class="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-admin-accent-soft cursor-pointer object-product-item text-sm" style="padding-left: ' + pl + 'px;" data-product-id="' + escapeHtml(String(product.id)) + '" data-product-name="' + escapeHtml(product.name) + '">' +
+                    '<span class="w-4 flex-shrink-0 inline-block"></span><span class="text-admin-fg">' + escapeHtml(product.name) + '</span></li>';
+            }
+            function loadChildren(sectionId, wrap, level) {
+                level = typeof level === 'number' ? level : 0;
+                renderLoader(wrap);
+                fetch(childrenUrl + '?section_id=' + encodeURIComponent(sectionId), { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        var sections = data.sections || [];
+                        var products = data.products || [];
+                        var html = '<ul class="tree-children space-y-0">';
+                        sections.forEach(function(s) { html += renderSection(s, level + 1); });
+                        products.forEach(function(p) { html += renderProduct(p, level + 1); });
+                        html += '</ul>';
+                        wrap.innerHTML = html;
+                        wrap.closest('.tree-node').setAttribute('data-loaded', '1');
+                        wrap.querySelectorAll('.object-product-item').forEach(function(el) {
+                            el.addEventListener('click', function() {
+                                addProduct(el.getAttribute('data-product-id'), el.getAttribute('data-product-name'));
+                            });
+                        });
+                    })
+                    .catch(function() { wrap.innerHTML = '<div class="py-2 px-2 text-sm text-red-600">Ошибка загрузки</div>'; });
+            }
+            tree.addEventListener('click', function(e) {
+                var btn = e.target.closest('.tree-toggle');
+                if (!btn) return;
+                var node = btn.closest('.tree-node');
+                var wrap = node.querySelector('.tree-children-wrap');
+                var sectionId = wrap && wrap.getAttribute('data-section-id');
+                if (!sectionId) return;
+                var isOpen = btn.getAttribute('aria-expanded') === 'true';
+                var loaded = node.getAttribute('data-loaded') === '1';
+                var level = parseInt(node.getAttribute('data-level') || '0', 10);
+                if (isOpen) {
+                    wrap.classList.add('hidden');
+                    var chevron = node.querySelector('.tree-chevron');
+                    if (chevron) chevron.classList.remove('rotate-90');
+                    btn.setAttribute('aria-expanded', 'false');
+                    return;
+                }
+                wrap.classList.remove('hidden');
+                var chevron = node.querySelector('.tree-chevron');
+                if (chevron) chevron.classList.add('rotate-90');
+                btn.setAttribute('aria-expanded', 'true');
+                if (!loaded) loadChildren(sectionId, wrap, level);
+            });
+        }
     })();
     </script>
     @endpush

@@ -61,6 +61,11 @@ class ProjectObject extends Model
         return $this->belongsTo(Client::class);
     }
 
+    public function objectProducts()
+    {
+        return $this->hasMany(ProjectObjectProduct::class, 'project_object_id');
+    }
+
     public static function stageOptions(): array
     {
         return [

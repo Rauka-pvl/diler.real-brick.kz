@@ -103,6 +103,30 @@
                 </section>
             @endif
 
+            @if($obj->objectProducts && $obj->objectProducts->isNotEmpty())
+                <section>
+                    <h4 class="text-sm font-semibold text-admin-fg mb-3">Товары</h4>
+                    <div class="border border-admin-border rounded-xl overflow-hidden">
+                        <table class="w-full text-sm">
+                            <thead class="bg-slate-50 border-b border-admin-border">
+                                <tr>
+                                    <th class="text-left py-2 px-3 font-medium text-admin-fg">Товар</th>
+                                    <th class="text-right py-2 px-3 font-medium text-admin-fg w-24">Кол-во</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($obj->objectProducts as $op)
+                                    <tr class="border-t border-admin-border">
+                                        <td class="py-2 px-3 text-admin-fg">{{ $op->product_name }}</td>
+                                        <td class="py-2 px-3 text-right text-admin-fg">{{ $op->quantity }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            @endif
+
             @if($obj->title_page_path || $obj->visualization_path)
                 <section>
                     <h4 class="text-sm font-semibold text-admin-fg mb-3">Файлы</h4>
