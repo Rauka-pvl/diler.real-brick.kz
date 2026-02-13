@@ -17,7 +17,7 @@
         <div class="p-6 border-b border-admin-border bg-slate-50/50">
             <div class="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium {{ $client->type === 'legal' ? 'bg-sky-100 text-sky-800' : 'bg-slate-100 text-slate-700' }}">{{ $client->type_label }}</span>
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium {{ $client->type === 'legal' ? 'bg-sky-100 text-sky-800' : ($client->type === 'ip' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-700') }}">{{ $client->type_label }}</span>
                     @if($client->dealer)
                         <p class="text-sm text-admin-muted mt-2">Диллер: <a href="{{ route('admin.dealers.show', $client->dealer) }}" class="text-admin-accent hover:underline">{{ $client->dealer->name }}</a></p>
                     @endif

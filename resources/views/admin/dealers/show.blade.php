@@ -91,7 +91,7 @@
                                     @if($c->city)<div class="text-xs text-admin-muted">{{ $c->city }}</div>@endif
                                 </td>
                                 <td class="py-3 px-4">
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $c->type === 'legal' ? 'bg-sky-100 text-sky-800' : 'bg-slate-100 text-slate-700' }}">{{ $c->type_label }}</span>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $c->type === 'legal' ? 'bg-sky-100 text-sky-800' : ($c->type === 'ip' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-700') }}">{{ $c->type_label }}</span>
                                 </td>
                                 <td class="py-3 px-4 text-right">
                                     <a href="{{ route('admin.clients.show', $c) }}" class="text-admin-accent hover:underline text-sm">Подробнее</a>

@@ -32,6 +32,7 @@
                             class="w-full px-4 py-3 rounded-xl border border-admin-border focus:border-admin-accent focus:ring-2 focus:ring-admin-accent/20 outline-none @error('type') border-red-500 @enderror">
                         <option value="individual" {{ old('type', $client->type) === 'individual' ? 'selected' : '' }}>Физ. лицо</option>
                         <option value="legal" {{ old('type', $client->type) === 'legal' ? 'selected' : '' }}>Юр. лицо</option>
+                        <option value="ip" {{ old('type', $client->type) === 'ip' ? 'selected' : '' }}>ИП</option>
                     </select>
                     @error('type')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                 </div>

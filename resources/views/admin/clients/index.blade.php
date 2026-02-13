@@ -18,6 +18,7 @@
                 <option value="">Все типы</option>
                 <option value="individual" {{ request('type') === 'individual' ? 'selected' : '' }}>Физ. лицо</option>
                 <option value="legal" {{ request('type') === 'legal' ? 'selected' : '' }}>Юр. лицо</option>
+                <option value="ip" {{ request('type') === 'ip' ? 'selected' : '' }}>ИП</option>
             </select>
             <button type="submit" class="px-5 py-2.5 rounded-xl bg-admin-accent text-white font-medium hover:bg-admin-accent-hover transition">Найти</button>
         </form>
@@ -65,7 +66,7 @@
                                 @endif
                             </td>
                             <td class="py-4 px-6">
-                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium {{ $client->type === 'legal' ? 'bg-sky-100 text-sky-800' : 'bg-slate-100 text-slate-700' }}">
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium {{ $client->type === 'legal' ? 'bg-sky-100 text-sky-800' : ($client->type === 'ip' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-700') }}">
                                     {{ $client->type_label }}
                                 </span>
                             </td>

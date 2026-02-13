@@ -51,7 +51,7 @@ class ClientController extends Controller
         $validated = $request->validate([
             'dealer_id' => ['required', 'exists:dealers,id'],
             'name' => ['required', 'string', 'max:255'],
-            'type' => ['required', 'in:individual,legal'],
+            'type' => ['required', 'in:individual,legal,ip'],
             'requisites' => ['nullable', 'string'],
             'address' => ['nullable', 'string', 'max:500'],
             'city' => ['nullable', 'string', 'max:255'],
@@ -88,7 +88,7 @@ class ClientController extends Controller
         $validated = $request->validate([
             'dealer_id' => ['required', 'exists:dealers,id'],
             'name' => ['required', 'string', 'max:255'],
-            'type' => ['required', 'in:individual,legal'],
+            'type' => ['required', 'in:individual,legal,ip'],
             'requisites' => ['nullable', 'string'],
             'address' => ['nullable', 'string', 'max:500'],
             'city' => ['nullable', 'string', 'max:255'],

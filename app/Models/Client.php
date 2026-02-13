@@ -11,6 +11,7 @@ class Client extends Model
 
     public const TYPE_INDIVIDUAL = 'individual';
     public const TYPE_LEGAL = 'legal';
+    public const TYPE_IP = 'ip';
 
     protected $fillable = [
         'dealer_id',
@@ -37,10 +38,16 @@ class Client extends Model
         return $this->type === self::TYPE_LEGAL;
     }
 
+    public function isIp(): bool
+    {
+        return $this->type === self::TYPE_IP;
+    }
+
     public function getTypeLabelAttribute(): string
     {
         return match ($this->type) {
             self::TYPE_LEGAL => 'Юр. лицо',
+            self::TYPE_IP => 'ИП',
             default => 'Физ. лицо',
         };
     }
