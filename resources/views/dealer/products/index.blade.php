@@ -30,9 +30,19 @@
                     @endforeach
                 </ul>
             @else
-                <p class="text-admin-muted py-8 text-center">
-                    Разделы каталога не загружены. Проверьте настройки Bitrix24 (BITRIX24_CATALOG_URL, BITRIX24_ROOT_SECTION_ID) и доступность API.
-                </p>
+                <div class="text-admin-muted py-8 text-center max-w-xl mx-auto space-y-3">
+                    <p>
+                        Разделы каталога не загружены. Проверьте на хостинге:
+                    </p>
+                    <ul class="text-left list-disc list-inside text-sm space-y-1">
+                        <li>В <code class="bg-slate-100 px-1 rounded">.env</code> заданы <code class="bg-slate-100 px-1 rounded">BITRIX24_CATALOG_URL</code> и <code class="bg-slate-100 px-1 rounded">BITRIX24_ROOT_SECTION_ID</code> (значения как локально).</li>
+                        <li>Исходящие HTTPS-запросы к домену Bitrix24 не блокируются файрволом хостинга.</li>
+                        <li>Логи: <code class="bg-slate-100 px-1 rounded">storage/logs/laravel.log</code> — там будет точная ошибка (таймаут, SSL, недоступный хост).</li>
+                    </ul>
+                    @if(!empty($catalogError))
+                        <p class="text-red-600 text-sm mt-4">Ошибка (APP_DEBUG): {{ $catalogError }}</p>
+                    @endif
+                </div>
             @endif
         </div>
     </div>

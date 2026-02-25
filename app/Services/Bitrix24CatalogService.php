@@ -16,6 +16,9 @@ class Bitrix24CatalogService
 
     protected int $rootSectionId;
 
+    /** Последняя ошибка API (для отображения при APP_DEBUG на хостинге). */
+    protected ?string $lastError = null;
+
     public function __construct()
     {
         $this->iblockId = (int) config('services.bitrix24.iblock_id', 14);
@@ -45,6 +48,7 @@ class Bitrix24CatalogService
      */
     public function getSections(int $parentSectionId): array
     {
+        $this->lastError = null;
         try {
             $core = $this->getServiceBuilder()->getCatalogScope()->core;
             $response = $core->call('catalog.section.list', [
@@ -56,12 +60,25 @@ class Bitrix24CatalogService
             $result = $response->getResponseData()->getResult();
             return $this->normalizeSectionsResult($result);
         } catch (\Throwable $e) {
-            Log::warning('Bitrix24 catalog.section.list failed', [
+            $this->lastError = $e->getMessage();
+            Log::error('Bitrix24 catalog.section.list failed', [
                 'parentSectionId' => $parentSectionId,
                 'message' => $e->getMessage(),
+                'exception' => get_class($e),
+                'file' => $e->getFile() . ':' . $e->getLine(),
             ]);
+            if ($e->getPrevious()) {
+                Log::error('Bitrix24 catalog.section.list previous', [
+                    'message' => $e->getPrevious()->getMessage(),
+                ]);
+            }
             return [];
         }
+    }
+
+    public function getLastError(): ?string
+    {
+        return $this->lastError;
     }
 
     /**

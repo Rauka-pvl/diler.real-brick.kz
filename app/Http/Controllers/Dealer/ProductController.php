@@ -14,21 +14,21 @@ class ProductController extends Controller
             return redirect()->route('dealer.change-password');
         }
 
-        try {
-            $rootId = (int) config('services.bitrix24.root_section_id', 22);
-            $sections = $catalog->getSections($rootId);
-            $sections = array_map(function ($s) {
-                $id = (int) ($s['id'] ?? $s['ID'] ?? 0);
-                $name = $s['name'] ?? $s['NAME'] ?? 'Без названия';
-                return $id ? ['id' => $id, 'name' => $name] : null;
-            }, $sections);
-            $sections = array_values(array_filter($sections));
-        } catch (\Throwable $e) {
-            report($e);
-            $sections = [];
+        $rootId = (int) config('services.bitrix24.root_section_id', 22);
+        $sections = $catalog->getSections($rootId);
+        $sections = array_map(function ($s) {
+            $id = (int) ($s['id'] ?? $s['ID'] ?? 0);
+            $name = $s['name'] ?? $s['NAME'] ?? 'Без названия';
+            return $id ? ['id' => $id, 'name' => $name] : null;
+        }, $sections);
+        $sections = array_values(array_filter($sections));
+
+        $catalogError = $catalog->getLastError();
+        if ($catalogError !== null && ! config('app.debug')) {
+            $catalogError = null;
         }
 
-        return view('dealer.products.index', compact('sections'));
+        return view('dealer.products.index', compact('sections', 'catalogError'));
     }
 
     /**
