@@ -17,7 +17,7 @@ class ProfileController extends Controller
         $dealer = $user->dealer;
 
         if (! $dealer) {
-            abort(404, 'Профиль диллера не найден.');
+            abort(404, 'Профиль дилера не найден.');
         }
 
         return view('dealer.profile.edit', compact('dealer'));
@@ -33,7 +33,7 @@ class ProfileController extends Controller
         $dealer = $user->dealer;
 
         if (! $dealer) {
-            abort(404, 'Профиль диллера не найден.');
+            abort(404, 'Профиль дилера не найден.');
         }
 
         $validated = $request->validate([

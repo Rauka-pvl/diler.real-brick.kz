@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Кабинет') — База Диллеров</title>
+    <title>@yield('title', 'Кабинет') — База Дилеров</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=dm-sans:400,500,600,700" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -17,7 +17,7 @@
                 <a href="{{ route('dealer.cabinet') }}" class="flex items-center gap-3">
                     <img src="{{ asset('images/logo.png') }}" alt="REAL BRICK" class="w-10 h-10 rounded-xl object-contain shrink-0" width="40" height="40">
                     <div>
-                        <span class="font-semibold text-white block">Кабинет диллера</span>
+                        <span class="font-semibold text-white block">Кабинет дилера</span>
                         <span class="text-xs text-slate-400">Личный раздел</span>
                     </div>
                 </a>
@@ -57,7 +57,7 @@
                     <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
                     </svg>
-                    <span>Диллерский пакет</span>
+                    <span>Дилерский пакет</span>
                 </a>
                 <a href="{{ route('dealer.profile.edit') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-admin-sidebar-hover hover:text-white transition {{ request()->routeIs('dealer.profile.*') ? 'bg-white/10 text-white' : '' }}">
                     <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

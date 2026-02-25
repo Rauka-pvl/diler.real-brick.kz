@@ -10,7 +10,7 @@
             @method('PUT')
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div class="sm:col-span-2">
-                    <label for="dealer_id" class="block text-sm font-medium text-admin-fg mb-2">Диллер <span class="text-red-500">*</span></label>
+                    <label for="dealer_id" class="block text-sm font-medium text-admin-fg mb-2">Дилер <span class="text-red-500">*</span></label>
                     <select id="dealer_id" name="dealer_id" required
                             class="w-full px-4 py-3 rounded-xl border border-admin-border focus:border-admin-accent focus:ring-2 focus:ring-admin-accent/20 outline-none @error('dealer_id') border-red-500 @enderror">
                         @foreach($dealers as $d)

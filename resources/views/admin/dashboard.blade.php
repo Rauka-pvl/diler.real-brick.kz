@@ -13,7 +13,7 @@
                     </svg>
                 </div>
                 <div>
-                    <p class="text-sm text-admin-muted">Всего диллеров</p>
+                    <p class="text-sm text-admin-muted">Всего дилеров</p>
                     <p class="text-2xl font-semibold text-admin-fg">{{ $totalDealers }}</p>
                 </div>
             </div>
@@ -66,10 +66,10 @@
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
-                Добавить диллера
+                Добавить дилера
             </a>
             <a href="{{ route('admin.dealers.index') }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-admin-border text-admin-fg font-medium hover:bg-slate-50 transition">
-                Список диллеров
+                Список дилеров
             </a>
             <a href="{{ route('admin.clients.create') }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-admin-accent text-white font-medium hover:bg-admin-accent-hover transition">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

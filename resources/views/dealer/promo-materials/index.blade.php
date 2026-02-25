@@ -1,7 +1,7 @@
 @extends('layouts.dealer')
 
 @section('title', 'Промо материалы')
-@section('heading', 'Диллерские промо материалы')
+@section('heading', 'Дилерские промо материалы')
 
 @section('content')
     <div class="mb-6">

@@ -85,7 +85,7 @@ class DealerController extends Controller
         unset($validated['password']);
         Dealer::create($validated);
 
-        return redirect()->route('admin.dealers.index')->with('success', 'Диллер успешно добавлен.');
+        return redirect()->route('admin.dealers.index')->with('success', 'Дилер успешно добавлен.');
     }
 
     public function show(Dealer $dealer)
@@ -155,17 +155,17 @@ class DealerController extends Controller
         unset($validated['password']);
         $dealer->update($validated);
 
-        return redirect()->route('admin.dealers.index')->with('success', 'Диллер обновлён.');
+        return redirect()->route('admin.dealers.index')->with('success', 'Дилер обновлён.');
     }
 
     public function destroy(Dealer $dealer)
     {
         $dealer->delete();
 
-        return redirect()->route('admin.dealers.index')->with('success', 'Диллер удалён.');
+        return redirect()->route('admin.dealers.index')->with('success', 'Дилер удалён.');
     }
 
-    /** Поиск диллеров для автодополнения (объекты) */
+    /** Поиск дилеров для автодополнения (объекты) */
     public function search(Request $request)
     {
         $q = $request->get('q', '');

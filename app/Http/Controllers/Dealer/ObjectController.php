@@ -16,7 +16,7 @@ class ObjectController extends Controller
     {
         $dealer = auth()->user()->dealer;
         if (! $dealer) {
-            abort(404, 'Профиль диллера не найден.');
+            abort(404, 'Профиль дилера не найден.');
         }
         return $dealer;
     }
@@ -59,7 +59,6 @@ class ObjectController extends Controller
         $dealer = $this->getDealer();
         $allClients = Client::where('dealer_id', $dealer->id)->orderBy('name')->get()
             ->map(fn ($c) => ['id' => $c->id, 'name' => $c->name, 'sub' => $c->city]);
-
         $sections = $this->getCatalogSections($catalog);
 
         return view('dealer.objects.create', compact('allClients', 'sections'));
@@ -173,7 +172,6 @@ class ObjectController extends Controller
         $dealer = $this->getDealer();
         $allClients = Client::where('dealer_id', $dealer->id)->orderBy('name')->get()
             ->map(fn ($c) => ['id' => $c->id, 'name' => $c->name, 'sub' => $c->city]);
-
         $sections = $this->getCatalogSections(app(Bitrix24CatalogService::class));
 
         return view('dealer.objects.edit', compact('obj', 'allClients', 'sections'));

@@ -6,8 +6,8 @@
 @section('content')
     <div class="flex flex-wrap gap-3 mb-6">
         <a href="{{ route('admin.dealers.edit', $dealer) }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-admin-accent text-white font-medium hover:bg-admin-accent-hover transition">Редактировать</a>
-        <a href="{{ route('admin.dealers.index') }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-admin-border text-admin-fg font-medium hover:bg-slate-50 transition">К списку диллеров</a>
-        <a href="{{ route('admin.objects.index', ['dealer_id' => $dealer->id]) }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-admin-border text-admin-fg font-medium hover:bg-slate-50 transition">Все объекты диллера</a>
+        <a href="{{ route('admin.dealers.index') }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-admin-border text-admin-fg font-medium hover:bg-slate-50 transition">К списку дилеров</a>
+        <a href="{{ route('admin.objects.index', ['dealer_id' => $dealer->id]) }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-admin-border text-admin-fg font-medium hover:bg-slate-50 transition">Все объекты дилера</a>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">

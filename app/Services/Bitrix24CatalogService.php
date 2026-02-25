@@ -2,22 +2,42 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Http;
+use Bitrix24\SDK\Services\ServiceBuilderFactory;
 use Illuminate\Support\Facades\Log;
 
 class Bitrix24CatalogService
 {
-    protected string $baseUrl;
+    protected ?\Bitrix24\SDK\Services\ServiceBuilder $serviceBuilder = null;
 
     protected int $iblockId;
 
+    /** Iblock для товаров (catalog.product.list); может отличаться от iblock_id разделов. */
+    protected int $productIblockId;
+
+    protected int $rootSectionId;
+
     public function __construct()
     {
-        $this->baseUrl = rtrim((string) config('services.bitrix24.rest_url'), '/');
         $this->iblockId = (int) config('services.bitrix24.iblock_id', 14);
-        if ($this->baseUrl === '') {
+        $this->productIblockId = (int) config('services.bitrix24.product_iblock_id', 14);
+        $this->rootSectionId = (int) config('services.bitrix24.root_section_id', 22);
+        $url = config('services.bitrix24.rest_url');
+        if (empty($url)) {
             Log::warning('Bitrix24: BITRIX24_CATALOG_URL не задан в .env');
         }
+    }
+
+    protected function getServiceBuilder(): \Bitrix24\SDK\Services\ServiceBuilder
+    {
+        if ($this->serviceBuilder === null) {
+            $url = rtrim((string) config('services.bitrix24.rest_url'), '/');
+            $this->serviceBuilder = ServiceBuilderFactory::createServiceBuilderFromWebhook(
+                $url,
+                null,
+                Log::getLogger()
+            );
+        }
+        return $this->serviceBuilder;
     }
 
     /**
@@ -25,92 +45,115 @@ class Bitrix24CatalogService
      */
     public function getSections(int $parentSectionId): array
     {
-        $url = $this->baseUrl . '/catalog.section.list';
-        $params = [
-            'filter[iblockId]' => $this->iblockId,
-            'filter[iblockSectionId]' => $parentSectionId,
-        ];
-
-        $response = Http::timeout(15)->get($url, $params);
-
-        if (! $response->successful()) {
+        try {
+            $core = $this->getServiceBuilder()->getCatalogScope()->core;
+            $response = $core->call('catalog.section.list', [
+                'filter' => [
+                    'iblockId' => $this->iblockId,
+                    'iblockSectionId' => $parentSectionId,
+                ],
+            ]);
+            $result = $response->getResponseData()->getResult();
+            return $this->normalizeSectionsResult($result);
+        } catch (\Throwable $e) {
             Log::warning('Bitrix24 catalog.section.list failed', [
-                'url' => $url,
-                'status' => $response->status(),
-                'body' => substr($response->body(), 0, 500),
+                'parentSectionId' => $parentSectionId,
+                'message' => $e->getMessage(),
             ]);
             return [];
         }
-
-        $body = $response->body();
-        if (str_starts_with(trim($body), '<')) {
-            Log::warning('Bitrix24 catalog.section.list: ответ не JSON (возможно HTML)', ['url' => $url]);
-            return [];
-        }
-        $data = $response->json();
-        $result = $this->extractResult($data, 'sections');
-        if ($result === [] && $data !== null) {
-            Log::debug('Bitrix24 catalog.section.list empty result', [
-                'keys' => array_keys($data),
-                'result_type' => isset($data['result']) ? gettype($data['result']) : 'missing',
-            ]);
-        }
-        return $result;
     }
 
     /**
-     * Извлечь массив из ответа Bitrix24 (result может быть массивом или объектом с ключом sections/products).
+     * Нормализация ответа catalog.section.list: result может быть массив с ключом sections или массив разделов.
      */
-    protected function extractResult(?array $data, string $altKey = null): array
+    protected function normalizeSectionsResult(array $result): array
     {
-        $result = $data['result'] ?? null;
-        if (is_array($result)) {
-            if ($altKey && isset($result[$altKey]) && is_array($result[$altKey])) {
-                return $result[$altKey];
+        $list = isset($result['sections']) && is_array($result['sections'])
+            ? $result['sections']
+            : array_values($result);
+
+        $out = [];
+        foreach ($list as $s) {
+            $arr = is_object($s) ? (array) $s : $s;
+            $id = (int) ($arr['id'] ?? $arr['ID'] ?? 0);
+            if ($id === 0) {
+                continue;
             }
-            return array_values($result);
+            $out[] = [
+                'id' => $id,
+                'name' => $arr['name'] ?? $arr['NAME'] ?? 'Без названия',
+            ];
         }
-        if (is_object($result)) {
-            if ($altKey && isset($result->{$altKey}) && is_array($result->{$altKey})) {
-                return $result->{$altKey};
-            }
-            $arr = (array) $result;
-            if ($altKey && isset($arr[$altKey]) && is_array($arr[$altKey])) {
-                return $arr[$altKey];
-            }
-            return array_values($arr);
-        }
-        if ($altKey && isset($data[$altKey]) && is_array($data[$altKey])) {
-            return $data[$altKey];
-        }
-        return [];
+        return $out;
     }
 
     /**
-     * Список товаров раздела.
+     * Список товаров раздела. Вызов через core, разбор разных форматов ответа.
+     * Запрашиваются все страницы (Bitrix отдаёт по 50 за запрос — цикл до конца).
      */
     public function getProducts(int $sectionId): array
     {
-        $url = $this->baseUrl . '/catalog.product.list';
-        $query = http_build_query([
-            'filter[iblockId]' => $this->iblockId,
-            'filter[iblockSectionId]' => $sectionId,
-        ]);
-        $query .= '&select[]=id&select[]=iblockId&select[]=name&select[]=iblockSectionId';
+        try {
+            $core = $this->getServiceBuilder()->getCatalogScope()->core;
+            $out = [];
+            $start = 0;
+            $pageSize = 50; // лимит одного ответа Bitrix, забираем все страницы
+            do {
+                $response = $core->call('catalog.product.list', [
+                    'select' => ['id', 'name', 'iblockSectionId'],
+                    'filter' => [
+                        'iblockId' => $this->productIblockId,
+                        'iblockSectionId' => $sectionId,
+                    ],
+                    'order' => ['name' => 'ASC'],
+                    'start' => $start,
+                ]);
+                $result = $response->getResponseData()->getResult();
+                $items = $this->normalizeProductsResult($result);
+                foreach ($items as $p) {
+                    $out[] = $p;
+                }
+                $start += $pageSize;
+            } while (count($items) >= $pageSize);
 
-        $response = Http::timeout(15)->get($url . '?' . $query);
-
-        if (! $response->successful()) {
+            return $out;
+        } catch (\Throwable $e) {
             Log::warning('Bitrix24 catalog.product.list failed', [
-                'url' => $url,
-                'status' => $response->status(),
-                'body' => $response->body(),
+                'sectionId' => $sectionId,
+                'message' => $e->getMessage(),
             ]);
             return [];
         }
+    }
 
-        $data = $response->json();
-        return $this->extractResult($data, 'products');
+    /**
+     * Разбор ответа catalog.product.list: result может быть ['products' => [...]] или объект с id-ключами.
+     */
+    protected function normalizeProductsResult(array $result): array
+    {
+        $list = [];
+        if (isset($result['products']) && is_array($result['products'])) {
+            $list = $result['products'];
+        } else {
+            $list = array_values($result);
+        }
+        $out = [];
+        foreach ($list as $p) {
+            $arr = is_object($p) ? (array) $p : $p;
+            if (! is_array($arr)) {
+                continue;
+            }
+            $id = $arr['id'] ?? $arr['ID'] ?? null;
+            if ($id === null || $id === '') {
+                continue;
+            }
+            $out[] = [
+                'id' => (int) $id,
+                'name' => $arr['name'] ?? $arr['NAME'] ?? '—',
+            ];
+        }
+        return $out;
     }
 
     /**
@@ -137,11 +180,10 @@ class Bitrix24CatalogService
 
     /**
      * Дерево каталога: секции и товары по корневому разделу.
-     * Возвращает массив корневых секций; каждая: id, name, children, products.
      */
-    public function buildTree(int $rootSectionId = null): array
+    public function buildTree(?int $rootSectionId = null): array
     {
-        $rootSectionId = $rootSectionId ?? config('services.bitrix24.root_section_id', 22);
+        $rootSectionId = $rootSectionId ?? $this->rootSectionId;
         $sections = $this->getSections($rootSectionId);
         $tree = [];
 
@@ -168,8 +210,8 @@ class Bitrix24CatalogService
             if ($id === 0) {
                 continue;
             }
-            $name = $section['name'] ?? $section['NAME'] ?? 'Без названия';
-            $children[] = $this->buildNode($id, $name);
+            $childName = $section['name'] ?? $section['NAME'] ?? 'Без названия';
+            $children[] = $this->buildNode($id, $childName);
         }
 
         $productList = [];

@@ -8,7 +8,7 @@
         <form action="{{ route('admin.objects.index') }}" method="GET" class="flex flex-wrap items-center gap-3" id="objects-filter-form">
             <div class="relative" id="dealer-search-wrap">
                 <input type="hidden" name="dealer_id" id="objects-dealer-id" value="{{ $selectedDealer?->id ?? request('dealer_id') }}">
-                <input type="text" id="dealer-search-input" class="px-4 py-2.5 rounded-xl border border-admin-border focus:border-admin-accent outline-none w-56" placeholder="Поиск диллера..." value="{{ $selectedDealer?->name ?? '' }}" autocomplete="off">
+                <input type="text" id="dealer-search-input" class="px-4 py-2.5 rounded-xl border border-admin-border focus:border-admin-accent outline-none w-56" placeholder="Поиск дилера..." value="{{ $selectedDealer?->name ?? '' }}" autocomplete="off">
                 <div id="dealer-suggestions" class="absolute left-0 right-0 top-full mt-1 bg-white border border-admin-border rounded-xl shadow-lg z-20 max-h-60 overflow-y-auto hidden"></div>
             </div>
             <div class="relative" id="client-search-wrap">
@@ -27,14 +27,14 @@
     </div>
     <p class="text-sm text-admin-muted mb-4">
         @if(request('dealer_id'))
-            Выбран диллер — в списке клиентов только его клиенты. Объекты отфильтрованы по диллеру.
+            Выбран дилер — в списке клиентов только его клиенты. Объекты отфильтрованы по дилеру.
         @endif
         @if(request('client_id') && $selectedClient)
             Выбран клиент: <strong class="text-admin-fg">{{ $selectedClient->name }}</strong>.
             @if($selectedClient->dealer)
-                Диллер: <a href="{{ route('admin.dealers.show', $selectedClient->dealer) }}" class="text-admin-accent hover:underline">{{ $selectedClient->dealer->name }}</a>.
+                Дилер: <a href="{{ route('admin.dealers.show', $selectedClient->dealer) }}" class="text-admin-accent hover:underline">{{ $selectedClient->dealer->name }}</a>.
             @else
-                Диллер не указан.
+                Дилер не указан.
             @endif
             Показаны только объекты этого клиента.
         @endif
@@ -138,7 +138,7 @@
                 <thead>
                     <tr class="border-b border-admin-border bg-slate-50/80">
                         <th class="text-left py-4 px-6 text-sm font-semibold text-admin-fg">Объект</th>
-                        <th class="text-left py-4 px-6 text-sm font-semibold text-admin-fg">Диллер</th>
+                        <th class="text-left py-4 px-6 text-sm font-semibold text-admin-fg">Дилер</th>
                         <th class="text-left py-4 px-6 text-sm font-semibold text-admin-fg">Клиент</th>
                         <th class="text-left py-4 px-6 text-sm font-semibold text-admin-fg">Стадия</th>
                         <th class="text-left py-4 px-6 text-sm font-semibold text-admin-fg">Поставка</th>

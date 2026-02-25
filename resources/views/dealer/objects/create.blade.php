@@ -21,7 +21,7 @@
                 </div>
 
                 <div class="sm:col-span-2 border-t border-admin-border pt-6">
-                    <h4 class="text-sm font-semibold text-admin-fg mb-4">Менеджер от диллера</h4>
+                    <h4 class="text-sm font-semibold text-admin-fg mb-4">Менеджер от дилера</h4>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         <div>
                             <label for="manager_name" class="block text-sm font-medium text-admin-fg mb-2">ФИО</label>
@@ -306,14 +306,13 @@
                 var pl = 8 + level * 16;
                 return '<li class="tree-node object-tree-node" data-section-id="' + section.id + '" data-level="' + level + '" data-loaded="0">' +
                     '<div class="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-slate-100 group" style="padding-left: ' + pl + 'px;">' +
-                    '<button type="button" class="tree-toggle p-0.5 rounded text-admin-muted hover:bg-slate-200 flex-shrink-0"><svg class="w-4 h-4 transition-transform tree-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></button>' +
+                    '<button type="button" class="tree-toggle p-0.5 rounded text-admin-muted hover:bg-slate-200 flex-shrink-0" aria-expanded="false"><svg class="w-4 h-4 transition-transform tree-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></button>' +
                     '<span class="font-medium text-admin-fg text-sm">' + escapeHtml(section.name) + '</span></div>' +
                     '<div class="tree-children-wrap hidden border-l border-admin-border ml-3 pl-2" style="margin-left: ' + (20 + level * 16) + 'px;" data-section-id="' + section.id + '"></div></li>';
             }
             function renderProduct(product, level) {
                 var pl = 8 + (level + 1) * 16;
-                return '<li class="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-admin-accent-soft cursor-pointer object-product-item text-sm" style="padding-left: ' + pl + 'px;" data-product-id="' + escapeHtml(String(product.id)) + '" data-product-name="' + escapeHtml(product.name) + '">' +
-                    '<span class="w-4 flex-shrink-0 inline-block"></span><span class="text-admin-fg">' + escapeHtml(product.name) + '</span></li>';
+                return '<li class="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-admin-accent-soft cursor-pointer object-product-item text-sm" style="padding-left: ' + pl + 'px;" data-product-id="' + escapeHtml(String(product.id)) + '" data-product-name="' + escapeHtml(product.name) + '"><span class="w-4 flex-shrink-0 inline-block"></span><span class="text-admin-fg">' + escapeHtml(product.name) + '</span></li>';
             }
             function loadChildren(sectionId, wrap, level) {
                 level = typeof level === 'number' ? level : 0;

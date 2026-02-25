@@ -1,11 +1,11 @@
 @extends('layouts.admin')
 
 @section('title', 'Промо материалы')
-@section('heading', 'Диллерские промо материалы')
+@section('heading', 'Дилерские промо материалы')
 
 @section('content')
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <p class="text-admin-muted text-sm">Шаблоны договоров, сертификаты, PDF и другие файлы для диллеров. Диллеры видят только список и могут скачивать.</p>
+        <p class="text-admin-muted text-sm">Шаблоны договоров, сертификаты, PDF и другие файлы для дилеров. Дилеры видят только список и могут скачивать.</p>
         <a href="{{ route('admin.promo-materials.create') }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-admin-accent text-white font-medium hover:bg-admin-accent-hover transition shrink-0">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>

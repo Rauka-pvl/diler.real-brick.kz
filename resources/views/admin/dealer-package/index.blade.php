@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
-@section('title', 'Диллерский пакет')
-@section('heading', 'Диллерский пакет')
+@section('title', 'Дилерский пакет')
+@section('heading', 'Дилерский пакет')
 
 @section('content')
     <div class="bg-white rounded-2xl border border-admin-border shadow-admin-card p-8">

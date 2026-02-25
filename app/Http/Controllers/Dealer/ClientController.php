@@ -12,7 +12,7 @@ class ClientController extends Controller
     {
         $dealer = auth()->user()->dealer;
         if (! $dealer) {
-            abort(404, 'Профиль диллера не найден.');
+            abort(404, 'Профиль дилера не найден.');
         }
         return $dealer;
     }

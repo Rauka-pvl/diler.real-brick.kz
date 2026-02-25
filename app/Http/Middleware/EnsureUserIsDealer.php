@@ -11,7 +11,7 @@ class EnsureUserIsDealer
     public function handle(Request $request, Closure $next): Response
     {
         if (! $request->user()?->isDealer()) {
-            abort(403, 'Доступ только для диллеров.');
+            abort(403, 'Доступ только для дилеров.');
         }
 
         return $next($request);

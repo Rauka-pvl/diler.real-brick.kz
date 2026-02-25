@@ -9,7 +9,7 @@
             <input type="text" name="search" value="{{ request('search') }}" placeholder="Поиск по имени, email, телефону, городу..."
                    class="px-4 py-2.5 rounded-xl border border-admin-border w-full sm:w-80 focus:border-admin-accent focus:ring-2 focus:ring-admin-accent/20 outline-none">
             <select name="dealer_id" class="px-4 py-2.5 rounded-xl border border-admin-border focus:border-admin-accent outline-none">
-                <option value="">Все диллеры</option>
+                <option value="">Все дилеры</option>
                 @foreach($dealers as $d)
                     <option value="{{ $d->id }}" {{ request('dealer_id') == $d->id ? 'selected' : '' }}>{{ $d->name }}</option>
                 @endforeach
@@ -30,7 +30,7 @@
         </a>
     </div>
     @if(request('dealer_id'))
-        <p class="text-sm text-admin-muted mb-4">Показаны только клиенты выбранного диллера.</p>
+        <p class="text-sm text-admin-muted mb-4">Показаны только клиенты выбранного дилера.</p>
     @endif
 
     <div class="bg-white rounded-2xl border border-admin-border shadow-admin-card overflow-hidden">
@@ -39,7 +39,7 @@
                 <thead>
                     <tr class="border-b border-admin-border bg-slate-50/80">
                         <th class="text-left py-4 px-6 text-sm font-semibold text-admin-fg">Клиент</th>
-                        <th class="text-left py-4 px-6 text-sm font-semibold text-admin-fg">Диллер</th>
+                        <th class="text-left py-4 px-6 text-sm font-semibold text-admin-fg">Дилер</th>
                         <th class="text-left py-4 px-6 text-sm font-semibold text-admin-fg">Тип</th>
                         <th class="text-left py-4 px-6 text-sm font-semibold text-admin-fg">Контактное лицо</th>
                         <th class="text-left py-4 px-6 text-sm font-semibold text-admin-fg">Город</th>

@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
-    <title>@yield('title', 'Панель управления') — База Диллеров</title>
+    <title>@yield('title', 'Панель управления') — База Дилеров</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=dm-sans:400,500,600,700" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -17,7 +17,7 @@
                 <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3">
                     <img src="{{ asset('images/logo.png') }}" alt="REAL BRICK" class="w-10 h-10 rounded-xl object-contain shrink-0" width="40" height="40">
                     <div>
-                        <span class="font-semibold text-white block">База Диллеров</span>
+                        <span class="font-semibold text-white block">База Дилеров</span>
                         <span class="text-xs text-slate-400">Админ-панель</span>
                     </div>
                 </a>
@@ -33,7 +33,7 @@
                     <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
                     </svg>
-                    <span>Диллеры</span>
+                    <span>Дилеры</span>
                 </a>
                 <a href="{{ route('admin.clients.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-admin-sidebar-hover hover:text-white transition {{ request()->routeIs('admin.clients.*') ? 'bg-white/10 text-white' : '' }}">
                     <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -57,7 +57,7 @@
                     <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
                     </svg>
-                    <span>Диллерский пакет</span>
+                    <span>Дилерский пакет</span>
                 </a>
             </nav>
         </aside>

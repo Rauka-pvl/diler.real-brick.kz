@@ -43,7 +43,7 @@
 
             @if($obj->manager_name || $obj->manager_phone || $obj->manager_email)
                 <section>
-                    <h4 class="text-sm font-semibold text-admin-fg mb-3">Менеджер от диллера</h4>
+                    <h4 class="text-sm font-semibold text-admin-fg mb-3">Менеджер от дилера</h4>
                     <ul class="space-y-1 text-admin-fg">
                         @if($obj->manager_name)<li><strong>ФИО:</strong> {{ $obj->manager_name }}</li>@endif
                         @if($obj->manager_position)<li><strong>Должность:</strong> {{ $obj->manager_position }}</li>@endif

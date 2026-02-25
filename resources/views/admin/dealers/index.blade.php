@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
-@section('title', 'База Диллеров')
-@section('heading', 'База Диллеров')
+@section('title', 'База Дилеров')
+@section('heading', 'База Дилеров')
 
 @section('content')
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
@@ -19,7 +19,7 @@
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
-            Добавить диллера
+            Добавить дилера
         </a>
     </div>
 
@@ -79,7 +79,7 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                         </svg>
                                     </a>
-                                    <form action="{{ route('admin.dealers.destroy', $dealer) }}" method="POST" class="inline" onsubmit="return confirm('Удалить диллера?');">
+                                    <form action="{{ route('admin.dealers.destroy', $dealer) }}" method="POST" class="inline" onsubmit="return confirm('Удалить дилера?');">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="p-2 rounded-lg text-admin-muted hover:bg-red-50 hover:text-red-600 transition" title="Удалить">
@@ -94,7 +94,7 @@
                     @empty
                         <tr>
                             <td colspan="6" class="py-12 px-6 text-center text-admin-muted">
-                                Диллеров пока нет. <a href="{{ route('admin.dealers.create') }}" class="text-admin-accent hover:underline">Добавить первого</a>
+                                Дилеров пока нет. <a href="{{ route('admin.dealers.create') }}" class="text-admin-accent hover:underline">Добавить первого</a>
                             </td>
                         </tr>
                     @endforelse

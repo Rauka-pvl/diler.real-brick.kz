@@ -6,7 +6,7 @@
 @section('content')
     <div class="flex flex-wrap gap-3 mb-6">
         @if($object->dealer)
-            <a href="{{ route('admin.dealers.show', $object->dealer) }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-admin-border text-admin-fg font-medium hover:bg-slate-50 transition">К диллеру</a>
+            <a href="{{ route('admin.dealers.show', $object->dealer) }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-admin-border text-admin-fg font-medium hover:bg-slate-50 transition">К дилеру</a>
         @endif
         @if($object->client)
             <a href="{{ route('admin.clients.show', $object->client) }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-admin-border text-admin-fg font-medium hover:bg-slate-50 transition">К клиенту</a>
@@ -28,7 +28,7 @@
                 </p>
             </div>
             @if($object->dealer)
-                <p class="text-sm text-admin-muted">Диллер: <a href="{{ route('admin.dealers.show', $object->dealer) }}" class="text-admin-accent hover:underline">{{ $object->dealer->name }}</a></p>
+                <p class="text-sm text-admin-muted">Дилер: <a href="{{ route('admin.dealers.show', $object->dealer) }}" class="text-admin-accent hover:underline">{{ $object->dealer->name }}</a></p>
             @endif
         </div>
 
@@ -42,7 +42,7 @@
 
             @if($object->manager_name || $object->manager_phone || $object->manager_email)
                 <section>
-                    <h4 class="text-sm font-semibold text-admin-fg mb-3">Менеджер от диллера</h4>
+                    <h4 class="text-sm font-semibold text-admin-fg mb-3">Менеджер от дилера</h4>
                     <ul class="space-y-1 text-admin-fg">
                         @if($object->manager_name)<li><strong>ФИО:</strong> {{ $object->manager_name }}</li>@endif
                         @if($object->manager_position)<li><strong>Должность:</strong> {{ $object->manager_position }}</li>@endif

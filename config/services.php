@@ -38,6 +38,7 @@ return [
     'bitrix24' => [
         'rest_url' => env('BITRIX24_CATALOG_URL', 'https://realbrick.bitrix24.kz/rest/152/ykk17l6z3bucehjf'),
         'iblock_id' => (int) env('BITRIX24_CATALOG_IBLOCK_ID', 14),
+        'product_iblock_id' => (int) env('BITRIX24_PRODUCT_IBLOCK_ID', 14), // если товары в др. инфоблоке — задайте BITRIX24_PRODUCT_IBLOCK_ID=16
         'root_section_id' => (int) env('BITRIX24_ROOT_SECTION_ID', 22),
     ],
 

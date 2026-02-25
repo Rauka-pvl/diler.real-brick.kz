@@ -22,7 +22,7 @@
                 </div>
 
                 <div class="sm:col-span-2 border-t border-admin-border pt-6">
-                    <h4 class="text-sm font-semibold text-admin-fg mb-4">Менеджер от диллера</h4>
+                    <h4 class="text-sm font-semibold text-admin-fg mb-4">Менеджер от дилера</h4>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         <div>
                             <label for="manager_name" class="block text-sm font-medium text-admin-fg mb-2">ФИО</label>
@@ -341,8 +341,7 @@
             }
             function renderProduct(product, level) {
                 var pl = 8 + (level + 1) * 16;
-                return '<li class="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-admin-accent-soft cursor-pointer object-product-item text-sm" style="padding-left: ' + pl + 'px;" data-product-id="' + escapeHtml(String(product.id)) + '" data-product-name="' + escapeHtml(product.name) + '">' +
-                    '<span class="w-4 flex-shrink-0 inline-block"></span><span class="text-admin-fg">' + escapeHtml(product.name) + '</span></li>';
+                return '<li class="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-admin-accent-soft cursor-pointer object-product-item text-sm" style="padding-left: ' + pl + 'px;" data-product-id="' + escapeHtml(String(product.id)) + '" data-product-name="' + escapeHtml(product.name) + '"><span class="w-4 flex-shrink-0 inline-block"></span><span class="text-admin-fg">' + escapeHtml(product.name) + '</span></li>';
             }
             function loadChildren(sectionId, wrap, level) {
                 level = typeof level === 'number' ? level : 0;

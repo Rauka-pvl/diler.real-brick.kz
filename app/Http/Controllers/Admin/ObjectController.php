@@ -39,7 +39,7 @@ class ObjectController extends Controller
             $selectedClient = Client::with('dealer')->find($request->client_id);
         }
 
-        // При выбранном клиенте в селекте диллеров показываем только диллера этого клиента
+        // При выбранном клиенте в селекте дилеров показываем только дилера этого клиента
         if ($selectedClient && $selectedClient->dealer) {
             $dealers = collect([$selectedClient->dealer]);
         } else {
