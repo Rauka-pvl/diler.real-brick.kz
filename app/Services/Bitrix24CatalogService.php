@@ -43,11 +43,16 @@ class Bitrix24CatalogService
         $start = 0;
         $pageSize = 50;
         do {
-            $query = 'select[]=id&select[]=name&select[]=iblockSectionId'
-                . '&filter[iblockId]=' . $this->iblockId
-                . '&filter[iblockSectionId]=' . $parentSectionId
-                . '&order[name]=ASC&start=' . $start;
-            $response = Http::timeout(15)->get($url . '?' . $query);
+            $params = [
+                'select' => ['id', 'name', 'iblockSectionId'],
+                'filter' => [
+                    'iblockId' => $this->iblockId,
+                    'iblockSectionId' => $parentSectionId,
+                ],
+                'order' => ['name' => 'ASC'],
+                'start' => $start,
+            ];
+            $response = Http::timeout(15)->get($url, $params);
             if (! $response->successful()) {
                 if ($start === 0) {
                     $this->lastError = 'HTTP ' . $response->status();
@@ -83,9 +88,8 @@ class Bitrix24CatalogService
      */
     protected function normalizeSectionsResult(array $result): array
     {
-        $list = isset($result['sections']) && is_array($result['sections'])
-            ? $result['sections']
-            : array_values($result);
+        $raw = isset($result['sections']) ? $result['sections'] : $result;
+        $list = array_values(is_array($raw) ? $raw : (array) $raw);
 
         $out = [];
         foreach ($list as $s) {
@@ -124,11 +128,16 @@ class Bitrix24CatalogService
         $start = 0;
         $pageSize = 50;
         do {
-            $query = 'select[]=id&select[]=iblockId&select[]=name'
-                . '&filter[iblockId]=' . $this->productIblockId
-                . '&filter[iblockSectionId]=' . $sectionId
-                . '&order[name]=ASC&start=' . $start;
-            $response = Http::timeout(15)->get($url . '?' . $query);
+            $params = [
+                'select' => ['id', 'iblockId', 'name'],
+                'filter' => [
+                    'iblockId' => $this->productIblockId,
+                    'iblockSectionId' => $sectionId,
+                ],
+                'order' => ['name' => 'ASC'],
+                'start' => $start,
+            ];
+            $response = Http::timeout(15)->get($url, $params);
             if (! $response->successful()) {
                 if ($start === 0) {
                     Log::warning('Bitrix24 catalog.product.list HTTP failed', [
@@ -176,10 +185,13 @@ class Bitrix24CatalogService
         $start = 0;
         $pageSize = 50;
         do {
-            $query = 'select[]=id&select[]=iblockId&select[]=name&select[]=iblockSectionId'
-                . '&filter[iblockId]=' . $this->productIblockId
-                . '&order[name]=ASC&start=' . $start;
-            $response = Http::timeout(15)->get($url . '?' . $query);
+            $params = [
+                'select' => ['id', 'iblockId', 'name', 'iblockSectionId'],
+                'filter' => ['iblockId' => $this->productIblockId],
+                'order' => ['name' => 'ASC'],
+                'start' => $start,
+            ];
+            $response = Http::timeout(15)->get($url, $params);
             if (! $response->successful()) {
                 break;
             }
@@ -212,12 +224,8 @@ class Bitrix24CatalogService
      */
     protected function normalizeProductsResult(array $result): array
     {
-        $list = [];
-        if (isset($result['products'])) {
-            $list = array_values((array) $result['products']);
-        } else {
-            $list = array_values($result);
-        }
+        $raw = isset($result['products']) ? $result['products'] : $result;
+        $list = array_values(is_array($raw) ? $raw : (array) $raw);
         $out = [];
         foreach ($list as $p) {
             $arr = is_object($p) ? (array) $p : $p;
