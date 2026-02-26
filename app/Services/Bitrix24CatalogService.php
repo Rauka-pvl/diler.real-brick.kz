@@ -2,14 +2,11 @@
 
 namespace App\Services;
 
-use Bitrix24\SDK\Services\ServiceBuilderFactory;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class Bitrix24CatalogService
 {
-    protected ?\Bitrix24\SDK\Services\ServiceBuilder $serviceBuilder = null;
-
     protected int $iblockId;
 
     /** Iblock для товаров (catalog.product.list); может отличаться от iblock_id разделов. */
@@ -31,50 +28,49 @@ class Bitrix24CatalogService
         }
     }
 
-    protected function getServiceBuilder(): \Bitrix24\SDK\Services\ServiceBuilder
-    {
-        if ($this->serviceBuilder === null) {
-            $url = rtrim((string) config('services.bitrix24.rest_url'), '/');
-            $this->serviceBuilder = ServiceBuilderFactory::createServiceBuilderFromWebhook(
-                $url,
-                null,
-                Log::getLogger()
-            );
-        }
-        return $this->serviceBuilder;
-    }
-
     /**
-     * Список разделов каталога (подразделы по parent section id).
+     * Список разделов каталога (подразделы по parent section id) через HTTP.
      */
     public function getSections(int $parentSectionId): array
     {
         $this->lastError = null;
-        try {
-            $core = $this->getServiceBuilder()->getCatalogScope()->core;
-            $response = $core->call('catalog.section.list', [
-                'filter' => [
-                    'iblockId' => $this->iblockId,
-                    'iblockSectionId' => $parentSectionId,
-                ],
-            ]);
-            $result = $response->getResponseData()->getResult();
-            return $this->normalizeSectionsResult($result);
-        } catch (\Throwable $e) {
-            $this->lastError = $e->getMessage();
-            Log::error('Bitrix24 catalog.section.list failed', [
-                'parentSectionId' => $parentSectionId,
-                'message' => $e->getMessage(),
-                'exception' => get_class($e),
-                'file' => $e->getFile() . ':' . $e->getLine(),
-            ]);
-            if ($e->getPrevious()) {
-                Log::error('Bitrix24 catalog.section.list previous', [
-                    'message' => $e->getPrevious()->getMessage(),
-                ]);
-            }
+        $baseUrl = rtrim((string) config('services.bitrix24.rest_url'), '/');
+        if ($baseUrl === '') {
             return [];
         }
+        $url = $baseUrl . '/catalog.section.list';
+        $out = [];
+        $start = 0;
+        $pageSize = 50;
+        do {
+            $query = 'select[]=id&select[]=name&select[]=iblockSectionId'
+                . '&filter[iblockId]=' . $this->iblockId
+                . '&filter[iblockSectionId]=' . $parentSectionId
+                . '&order[name]=ASC&start=' . $start;
+            $response = Http::timeout(15)->get($url . '?' . $query);
+            if (! $response->successful()) {
+                if ($start === 0) {
+                    $this->lastError = 'HTTP ' . $response->status();
+                    Log::error('Bitrix24 catalog.section.list HTTP failed', [
+                        'parentSectionId' => $parentSectionId,
+                        'status' => $response->status(),
+                    ]);
+                }
+                break;
+            }
+            $data = $response->json();
+            $result = $data['result'] ?? [];
+            if (! is_array($result)) {
+                $result = (array) $result;
+            }
+            $items = $this->normalizeSectionsResult($result);
+            foreach ($items as $s) {
+                $out[] = $s;
+            }
+            $start += $pageSize;
+        } while (count($items) >= $pageSize);
+
+        return $out;
     }
 
     public function getLastError(): ?string
@@ -107,58 +103,15 @@ class Bitrix24CatalogService
     }
 
     /**
-     * Список товаров раздела. HTTP в приоритете (формат как в рабочем примере Bitrix24).
+     * Список товаров раздела через HTTP.
      */
     public function getProducts(int $sectionId): array
     {
-        $out = $this->getProductsViaHttp($sectionId);
-        if ($out !== []) {
-            return $out;
-        }
-        return $this->getProductsViaSdk($sectionId);
+        return $this->getProductsViaHttp($sectionId);
     }
 
     /**
-     * Товары через SDK.
-     */
-    protected function getProductsViaSdk(int $sectionId): array
-    {
-        try {
-            $core = $this->getServiceBuilder()->getCatalogScope()->core;
-            $out = [];
-            $start = 0;
-            $pageSize = 50;
-            do {
-                $response = $core->call('catalog.product.list', [
-                    'select' => ['id', 'name', 'iblockSectionId'],
-                    'filter' => [
-                        'iblockId' => $this->productIblockId,
-                        'iblockSectionId' => $sectionId,
-                    ],
-                    'order' => ['name' => 'ASC'],
-                    'start' => $start,
-                ]);
-                $result = $response->getResponseData()->getResult();
-                $result = is_array($result) ? $result : (array) $result;
-                $items = $this->normalizeProductsResult($result);
-                foreach ($items as $p) {
-                    $out[] = $p;
-                }
-                $start += $pageSize;
-            } while (count($items) >= $pageSize);
-
-            return $out;
-        } catch (\Throwable $e) {
-            Log::debug('Bitrix24 catalog.product.list SDK failed', [
-                'sectionId' => $sectionId,
-                'message' => $e->getMessage(),
-            ]);
-            return [];
-        }
-    }
-
-    /**
-     * Товары прямым HTTP (на случай другого формата ответа или если SDK отдаёт пусто).
+     * Товары через HTTP.
      */
     protected function getProductsViaHttp(int $sectionId): array
     {
