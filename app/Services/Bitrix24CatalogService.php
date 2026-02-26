@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Bitrix24\SDK\Services\ServiceBuilderFactory;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class Bitrix24CatalogService
@@ -106,16 +107,27 @@ class Bitrix24CatalogService
     }
 
     /**
-     * Список товаров раздела. Вызов через core, разбор разных форматов ответа.
-     * Запрашиваются все страницы (Bitrix отдаёт по 50 за запрос — цикл до конца).
+     * Список товаров раздела. HTTP в приоритете (формат как в рабочем примере Bitrix24).
      */
     public function getProducts(int $sectionId): array
+    {
+        $out = $this->getProductsViaHttp($sectionId);
+        if ($out !== []) {
+            return $out;
+        }
+        return $this->getProductsViaSdk($sectionId);
+    }
+
+    /**
+     * Товары через SDK.
+     */
+    protected function getProductsViaSdk(int $sectionId): array
     {
         try {
             $core = $this->getServiceBuilder()->getCatalogScope()->core;
             $out = [];
             $start = 0;
-            $pageSize = 50; // лимит одного ответа Bitrix, забираем все страницы
+            $pageSize = 50;
             do {
                 $response = $core->call('catalog.product.list', [
                     'select' => ['id', 'name', 'iblockSectionId'],
@@ -127,6 +139,7 @@ class Bitrix24CatalogService
                     'start' => $start,
                 ]);
                 $result = $response->getResponseData()->getResult();
+                $result = is_array($result) ? $result : (array) $result;
                 $items = $this->normalizeProductsResult($result);
                 foreach ($items as $p) {
                     $out[] = $p;
@@ -136,7 +149,7 @@ class Bitrix24CatalogService
 
             return $out;
         } catch (\Throwable $e) {
-            Log::warning('Bitrix24 catalog.product.list failed', [
+            Log::debug('Bitrix24 catalog.product.list SDK failed', [
                 'sectionId' => $sectionId,
                 'message' => $e->getMessage(),
             ]);
@@ -145,13 +158,110 @@ class Bitrix24CatalogService
     }
 
     /**
-     * Разбор ответа catalog.product.list: result может быть ['products' => [...]] или объект с id-ключами.
+     * Товары прямым HTTP (на случай другого формата ответа или если SDK отдаёт пусто).
+     */
+    protected function getProductsViaHttp(int $sectionId): array
+    {
+        $baseUrl = rtrim((string) config('services.bitrix24.rest_url'), '/');
+        if ($baseUrl === '') {
+            return [];
+        }
+        $url = $baseUrl . '/catalog.product.list';
+        $out = [];
+        $start = 0;
+        $pageSize = 50;
+        do {
+            $query = 'select[]=id&select[]=iblockId&select[]=name'
+                . '&filter[iblockId]=' . $this->productIblockId
+                . '&filter[iblockSectionId]=' . $sectionId
+                . '&order[name]=ASC&start=' . $start;
+            $response = Http::timeout(15)->get($url . '?' . $query);
+            if (! $response->successful()) {
+                if ($start === 0) {
+                    Log::warning('Bitrix24 catalog.product.list HTTP failed', [
+                        'sectionId' => $sectionId,
+                        'status' => $response->status(),
+                    ]);
+                }
+                break;
+            }
+            $data = $response->json();
+            $result = $data['result'] ?? [];
+            if (! is_array($result)) {
+                $result = (array) $result;
+            }
+            $items = $this->normalizeProductsResult($result);
+            foreach ($items as $p) {
+                $out[] = $p;
+            }
+            $start += $pageSize;
+        } while (count($items) >= $pageSize);
+
+        if ($out !== []) {
+            return $out;
+        }
+
+        // Пусто с фильтром по разделу — пробуем без раздела и фильтруем по iblockSectionId в PHP
+        $all = $this->fetchAllProductsViaHttp();
+        return array_values(array_filter($all, function ($p) use ($sectionId) {
+            $sid = $p['iblockSectionId'] ?? $p['IBLOCK_SECTION_ID'] ?? null;
+            return $sid !== null && (int) $sid === $sectionId;
+        }));
+    }
+
+    /**
+     * Все товары инфоблока по HTTP (для фильтрации по разделу в PHP).
+     */
+    protected function fetchAllProductsViaHttp(): array
+    {
+        $baseUrl = rtrim((string) config('services.bitrix24.rest_url'), '/');
+        if ($baseUrl === '') {
+            return [];
+        }
+        $url = $baseUrl . '/catalog.product.list';
+        $out = [];
+        $start = 0;
+        $pageSize = 50;
+        do {
+            $query = 'select[]=id&select[]=iblockId&select[]=name&select[]=iblockSectionId'
+                . '&filter[iblockId]=' . $this->productIblockId
+                . '&order[name]=ASC&start=' . $start;
+            $response = Http::timeout(15)->get($url . '?' . $query);
+            if (! $response->successful()) {
+                break;
+            }
+            $data = $response->json();
+            $result = $data['result'] ?? [];
+            if (! is_array($result)) {
+                $result = (array) $result;
+            }
+            $list = isset($result['products']) ? array_values((array) $result['products']) : array_values($result);
+            foreach ($list as $raw) {
+                $arr = is_array($raw) ? $raw : (array) $raw;
+                $id = $arr['id'] ?? $arr['ID'] ?? null;
+                if ($id === null || $id === '') {
+                    continue;
+                }
+                $out[] = [
+                    'id' => (int) $id,
+                    'name' => (string) ($arr['name'] ?? $arr['NAME'] ?? '—'),
+                    'iblockSectionId' => isset($arr['iblockSectionId']) ? (int) $arr['iblockSectionId'] : (isset($arr['IBLOCK_SECTION_ID']) ? (int) $arr['IBLOCK_SECTION_ID'] : null),
+                ];
+            }
+            $start += $pageSize;
+        } while (count($list) >= $pageSize);
+
+        return $out;
+    }
+
+    /**
+     * Разбор ответа catalog.product.list: result может быть ['products' => [...]], объект с id-ключами, или массив элементов.
      */
     protected function normalizeProductsResult(array $result): array
     {
         $list = [];
-        if (isset($result['products']) && is_array($result['products'])) {
-            $list = $result['products'];
+        if (isset($result['products'])) {
+            $list = array_values((array) $result['products']);
         } else {
             $list = array_values($result);
         }
@@ -165,9 +275,10 @@ class Bitrix24CatalogService
             if ($id === null || $id === '') {
                 continue;
             }
+            $name = $arr['name'] ?? $arr['NAME'] ?? '—';
             $out[] = [
                 'id' => (int) $id,
-                'name' => $arr['name'] ?? $arr['NAME'] ?? '—',
+                'name' => (string) $name,
             ];
         }
         return $out;

@@ -303,6 +303,16 @@
         }
         function addProduct(bitrixId, productName) {
             if (!bitrixId || !productName) return;
+            var sid = String(bitrixId);
+            var rows = tbody.querySelectorAll('tr');
+            for (var i = 0; i < rows.length; i++) {
+                var inp = rows[i].querySelector('input[name*="[bitrix_product_id]"]');
+                if (inp && inp.value === sid) {
+                    var qInput = rows[i].querySelector('input[name*="[quantity]"]');
+                    if (qInput) { var v = parseFloat(qInput.value) || 0; qInput.value = (v + 1).toString(); }
+                    return;
+                }
+            }
             var emptyRow = document.getElementById('object-products-empty');
             if (emptyRow) emptyRow.remove();
             var tr = document.createElement('tr');
