@@ -74,6 +74,13 @@
                 </section>
             @endif
 
+            @if($obj->map_lat !== null && $obj->map_lng !== null)
+                <section>
+                    <h4 class="text-sm font-semibold text-admin-fg mb-3">Карта объекта</h4>
+                    <div id="object-show-map" class="w-full rounded-xl border border-admin-border overflow-hidden bg-slate-100" style="height: 320px;" data-lat="{{ $obj->map_lat }}" data-lng="{{ $obj->map_lng }}"></div>
+                </section>
+            @endif
+
             @if($obj->architect_org || $obj->architect_phone || $obj->architect_contact || $obj->architect_email)
                 <section>
                     <h4 class="text-sm font-semibold text-admin-fg mb-3">Архитектор / архитектурная организация</h4>
@@ -92,6 +99,19 @@
                     <ul class="space-y-1 text-admin-fg">
                         @if($obj->investor_contact)<li><strong>Контактное лицо:</strong> {{ $obj->investor_contact }}</li>@endif
                         @if($obj->investor_phone)<li><strong>Телефон:</strong> {{ $obj->investor_phone }}</li>@endif
+                    </ul>
+                </section>
+            @endif
+
+            @if($obj->intermediary_type || $obj->intermediary_name || $obj->intermediary_contact || $obj->intermediary_position || $obj->intermediary_percent !== null)
+                <section>
+                    <h4 class="text-sm font-semibold text-admin-fg mb-3">Посредник</h4>
+                    <ul class="space-y-1 text-admin-fg">
+                        @if($obj->intermediary_type_label)<li><strong>Тип посредника:</strong> {{ $obj->intermediary_type_label }}</li>@endif
+                        @if($obj->intermediary_name)<li><strong>ФИО:</strong> {{ $obj->intermediary_name }}</li>@endif
+                        @if($obj->intermediary_contact)<li><strong>Контактные данные:</strong> {{ $obj->intermediary_contact }}</li>@endif
+                        @if($obj->intermediary_position)<li><strong>Должность:</strong> {{ $obj->intermediary_position }}</li>@endif
+                        @if($obj->intermediary_percent !== null)<li><strong>Процент работы:</strong> {{ $obj->intermediary_percent }}%</li>@endif
                     </ul>
                 </section>
             @endif
@@ -148,4 +168,23 @@
             @endif
         </div>
     </div>
+
+    @if($obj->map_lat !== null && $obj->map_lng !== null)
+    @push('scripts')
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhI7+UOWe+12ytYmKpu7b/cvDPiQaE2b9Y4Y=" crossorigin="">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script>
+    (function() {
+        var el = document.getElementById('object-show-map');
+        if (!el) return;
+        var lat = parseFloat(el.getAttribute('data-lat'));
+        var lng = parseFloat(el.getAttribute('data-lng'));
+        if (isNaN(lat) || isNaN(lng)) return;
+        var map = L.map('object-show-map').setView([lat, lng], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
+        L.marker([lat, lng]).addTo(map);
+    })();
+    </script>
+    @endpush
+    @endif
 @endsection

@@ -87,6 +87,24 @@
                     </div>
                 </div>
 
+                <div class="sm:col-span-2 border-t border-admin-border pt-6">
+                    <h4 class="text-sm font-semibold text-admin-fg mb-4">Карта объекта</h4>
+                    <p class="text-admin-muted text-sm mb-3">Найдите адрес или кликните на карте, чтобы поставить точку объекта.</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-2">
+                        <input type="text" id="map_city_search" placeholder="Город (необязательно)..." class="px-4 py-3 rounded-xl border border-admin-border focus:border-admin-accent focus:ring-2 focus:ring-admin-accent/20 outline-none">
+                        <div class="sm:col-span-2 flex flex-wrap gap-3">
+                            <input type="text" id="map_address_search" placeholder="Поиск по адресу..." class="flex-1 px-4 py-3 rounded-xl border border-admin-border focus:border-admin-accent focus:ring-2 focus:ring-admin-accent/20 outline-none">
+                            <button type="button" id="map_search_btn" class="px-4 py-3 rounded-xl bg-admin-accent text-white font-medium hover:bg-admin-accent-hover transition whitespace-nowrap">Найти</button>
+                            <button type="button" id="map_geo_btn" class="px-4 py-3 rounded-xl border border-admin-border text-admin-fg font-medium hover:bg-slate-50 transition whitespace-nowrap">Моё местоположение</button>
+                            <button type="button" id="map_clear_btn" class="px-4 py-3 rounded-xl border border-admin-border text-admin-fg font-medium hover:bg-slate-50 transition whitespace-nowrap">Очистить точку</button>
+                        </div>
+                    </div>
+                    <div id="map_search_results" class="mb-3 border border-admin-border rounded-xl overflow-hidden hidden"></div>
+                    <div id="object-map" class="w-full rounded-xl border border-admin-border overflow-hidden bg-slate-100" style="height: 320px;"></div>
+                    <input type="hidden" name="map_lat" id="map_lat" value="{{ old('map_lat', $obj->map_lat) }}">
+                    <input type="hidden" name="map_lng" id="map_lng" value="{{ old('map_lng', $obj->map_lng) }}">
+                </div>
+
                 <div class="sm:col-span-2">
                     <label for="name" class="block text-sm font-medium text-admin-fg mb-2">Полное наименование объекта</label>
                     <input type="text" id="name" name="name" value="{{ old('name', $obj->name) }}" class="w-full px-4 py-3 rounded-xl border border-admin-border focus:border-admin-accent focus:ring-2 focus:ring-admin-accent/20 outline-none">
@@ -124,6 +142,37 @@
                         <div>
                             <label for="investor_phone" class="block text-sm font-medium text-admin-fg mb-2">Телефон</label>
                             <input type="text" id="investor_phone" name="investor_phone" value="{{ old('investor_phone', $obj->investor_phone) }}" class="w-full px-4 py-3 rounded-xl border border-admin-border focus:border-admin-accent focus:ring-2 focus:ring-admin-accent/20 outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sm:col-span-2 border-t border-admin-border pt-6">
+                    <h4 class="text-sm font-semibold text-admin-fg mb-4">Посредник</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div>
+                            <label for="intermediary_type" class="block text-sm font-medium text-admin-fg mb-2">Тип посредника</label>
+                            <select id="intermediary_type" name="intermediary_type" class="w-full px-4 py-3 rounded-xl border border-admin-border focus:border-admin-accent focus:ring-2 focus:ring-admin-accent/20 outline-none">
+                                <option value="">Не выбран</option>
+                                @foreach(\App\Models\ProjectObject::intermediaryTypeOptions() as $key => $label)
+                                    <option value="{{ $key }}" {{ old('intermediary_type', $obj->intermediary_type) === $key ? 'selected' : '' }}>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label for="intermediary_name" class="block text-sm font-medium text-admin-fg mb-2">ФИО</label>
+                            <input type="text" id="intermediary_name" name="intermediary_name" value="{{ old('intermediary_name', $obj->intermediary_name) }}" class="w-full px-4 py-3 rounded-xl border border-admin-border focus:border-admin-accent focus:ring-2 focus:ring-admin-accent/20 outline-none">
+                        </div>
+                        <div>
+                            <label for="intermediary_contact" class="block text-sm font-medium text-admin-fg mb-2">Контактные данные</label>
+                            <input type="text" id="intermediary_contact" name="intermediary_contact" value="{{ old('intermediary_contact', $obj->intermediary_contact) }}" class="w-full px-4 py-3 rounded-xl border border-admin-border focus:border-admin-accent focus:ring-2 focus:ring-admin-accent/20 outline-none">
+                        </div>
+                        <div>
+                            <label for="intermediary_position" class="block text-sm font-medium text-admin-fg mb-2">Должность</label>
+                            <input type="text" id="intermediary_position" name="intermediary_position" value="{{ old('intermediary_position', $obj->intermediary_position) }}" class="w-full px-4 py-3 rounded-xl border border-admin-border focus:border-admin-accent focus:ring-2 focus:ring-admin-accent/20 outline-none">
+                        </div>
+                        <div>
+                            <label for="intermediary_percent" class="block text-sm font-medium text-admin-fg mb-2">Процент работы</label>
+                            <input type="number" id="intermediary_percent" name="intermediary_percent" value="{{ old('intermediary_percent', $obj->intermediary_percent) }}" min="0" max="100" step="0.01" class="w-full px-4 py-3 rounded-xl border border-admin-border focus:border-admin-accent focus:ring-2 focus:ring-admin-accent/20 outline-none">
                         </div>
                     </div>
                 </div>
@@ -235,6 +284,8 @@
     </div>
 
     @push('scripts')
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhI7+UOWe+12ytYmKpu7b/cvDPiQaE2b9Y4Y=" crossorigin="">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script>
     (function() {
         var allClients = @json($allClients);
@@ -397,6 +448,115 @@
                 if (chevron) chevron.classList.add('rotate-90');
                 btn.setAttribute('aria-expanded', 'true');
                 if (!loaded) loadChildren(sectionId, wrap, level);
+            });
+        }
+    })();
+
+    (function() {
+        var mapEl = document.getElementById('object-map');
+        var latInput = document.getElementById('map_lat');
+        var lngInput = document.getElementById('map_lng');
+        var searchInput = document.getElementById('map_address_search');
+        var cityInput = document.getElementById('map_city_search');
+        var searchBtn = document.getElementById('map_search_btn');
+        var geoBtn = document.getElementById('map_geo_btn');
+        var clearBtn = document.getElementById('map_clear_btn');
+        var resultsWrap = document.getElementById('map_search_results');
+        if (!mapEl || !latInput || !lngInput) return;
+        var initialLat = latInput.value ? parseFloat(latInput.value) : null;
+        var initialLng = lngInput.value ? parseFloat(lngInput.value) : null;
+        var centerLat = initialLat || 43.238949;
+        var centerLng = initialLng || 76.945465;
+        var map = L.map('object-map').setView([centerLat, centerLng], initialLat && initialLng ? 15 : 5);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(map);
+        var marker = null;
+        function setMarker(lat, lng) {
+            if (marker) map.removeLayer(marker);
+            marker = L.marker([lat, lng]).addTo(map);
+            latInput.value = lat;
+            lngInput.value = lng;
+        }
+        function clearMarker() {
+            if (marker) {
+                map.removeLayer(marker);
+                marker = null;
+            }
+            latInput.value = '';
+            lngInput.value = '';
+        }
+        if (initialLat != null && initialLng != null) setMarker(initialLat, initialLng);
+        map.on('click', function(e) {
+            setMarker(e.latlng.lat, e.latlng.lng);
+        });
+        function showResults(items) {
+            if (!resultsWrap) return;
+            if (!items.length) {
+                resultsWrap.innerHTML = '<div class="px-4 py-3 text-sm text-admin-muted">Ничего не найдено</div>';
+                resultsWrap.classList.remove('hidden');
+                return;
+            }
+            resultsWrap.innerHTML = items.map(function(it) {
+                var name = (it.display_name || '').replace(/</g, '&lt;');
+                var a = it.address || {};
+                var city = a.city || a.town || a.village || a.municipality || a.state || '';
+                return '<button type="button" class="w-full text-left px-4 py-3 hover:bg-slate-50 border-b border-admin-border last:border-0" data-lat="' + it.lat + '" data-lng="' + it.lon + '" data-city="' + city.replace(/</g, '&lt;') + '"><div class="text-sm text-admin-fg">' + name + '</div></button>';
+            }).join('');
+            resultsWrap.classList.remove('hidden');
+        }
+        function hideResults() {
+            if (resultsWrap) resultsWrap.classList.add('hidden');
+        }
+        function doSearch() {
+            var q = (searchInput && searchInput.value || '').trim();
+            var city = (cityInput && cityInput.value || '').trim();
+            if (!q) return;
+            if (searchBtn) searchBtn.disabled = true;
+            var query = city ? (city + ', ' + q) : q;
+            fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(query) + '&format=json&addressdetails=1&limit=5', { headers: { 'Accept': 'application/json' } })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    showResults(Array.isArray(data) ? data : []);
+                })
+                .finally(function() { if (searchBtn) searchBtn.disabled = false; });
+        }
+        if (searchBtn) searchBtn.addEventListener('click', doSearch);
+        if (searchInput) searchInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); doSearch(); } });
+        if (cityInput) cityInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); doSearch(); } });
+        if (resultsWrap) {
+            resultsWrap.addEventListener('click', function(e) {
+                var btn = e.target.closest('button[data-lat][data-lng]');
+                if (!btn) return;
+                var lat = parseFloat(btn.getAttribute('data-lat'));
+                var lng = parseFloat(btn.getAttribute('data-lng'));
+                var city = btn.getAttribute('data-city') || '';
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    map.setView([lat, lng], 16);
+                    setMarker(lat, lng);
+                }
+                if (cityInput && city && !cityInput.value) cityInput.value = city;
+                hideResults();
+            });
+        }
+        document.addEventListener('click', function(e) {
+            if (resultsWrap && !e.target.closest('#map_search_results') && !e.target.closest('#map_search_btn')) hideResults();
+        });
+        if (geoBtn) {
+            geoBtn.addEventListener('click', function() {
+                if (!navigator.geolocation) return;
+                geoBtn.disabled = true;
+                navigator.geolocation.getCurrentPosition(function(pos) {
+                    var lat = pos.coords.latitude;
+                    var lng = pos.coords.longitude;
+                    map.setView([lat, lng], 16);
+                    setMarker(lat, lng);
+                }, function() {}, { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 });
+                setTimeout(function() { geoBtn.disabled = false; }, 1000);
+            });
+        }
+        if (clearBtn) {
+            clearBtn.addEventListener('click', function() {
+                clearMarker();
+                hideResults();
             });
         }
     })();

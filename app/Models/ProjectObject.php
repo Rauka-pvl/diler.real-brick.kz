@@ -12,6 +12,8 @@ class ProjectObject extends Model
     public const STAGE_NEGOTIATIONS = 'negotiations';
     public const STAGE_CONTRACT_SIGNED = 'contract_signed';
     public const STAGE_COMPLETED = 'completed';
+    public const INTERMEDIARY_ARCHITECT = 'architect';
+    public const INTERMEDIARY_DESIGNER = 'designer';
 
     protected $table = 'project_objects';
 
@@ -30,6 +32,8 @@ class ProjectObject extends Model
         'address_street',
         'address_house',
         'address_cadastral',
+        'map_lat',
+        'map_lng',
         'name',
         'architect_org',
         'architect_phone',
@@ -37,6 +41,11 @@ class ProjectObject extends Model
         'architect_email',
         'investor_contact',
         'investor_phone',
+        'intermediary_type',
+        'intermediary_name',
+        'intermediary_contact',
+        'intermediary_position',
+        'intermediary_percent',
         'competing_materials',
         'stage',
         'planned_delivery_date',
@@ -75,8 +84,24 @@ class ProjectObject extends Model
         ];
     }
 
+    public static function intermediaryTypeOptions(): array
+    {
+        return [
+            self::INTERMEDIARY_ARCHITECT => 'Архитектор',
+            self::INTERMEDIARY_DESIGNER => 'Дизайнер',
+        ];
+    }
+
     public function getStageLabelAttribute(): string
     {
         return self::stageOptions()[$this->stage] ?? $this->stage;
+    }
+
+    public function getIntermediaryTypeLabelAttribute(): ?string
+    {
+        if (! $this->intermediary_type) {
+            return null;
+        }
+        return self::intermediaryTypeOptions()[$this->intermediary_type] ?? $this->intermediary_type;
     }
 }
