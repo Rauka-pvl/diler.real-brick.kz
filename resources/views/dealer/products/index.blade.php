@@ -6,11 +6,19 @@
 @section('content')
     <div class="bg-white rounded-2xl border border-admin-border shadow-admin-card overflow-hidden">
         <div class="p-6 border-b border-admin-border bg-slate-50/80">
-            <p class="text-admin-muted text-sm">
-                Каталог загружается по шагам: сначала разделы верхнего уровня, при раскрытии — подразделы и товары.
-            </p>
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <p class="text-admin-muted text-sm">
+                    Каталог загружается по шагам: сначала разделы верхнего уровня, при раскрытии — подразделы и товары.
+                </p>
+                <div class="flex-shrink-0 w-full sm:w-80">
+                    <input type="search" id="catalog-search" placeholder="Поиск по товарам и разделам…" autocomplete="off"
+                           class="w-full px-4 py-2 rounded-lg border border-admin-border text-sm text-admin-fg placeholder:text-admin-muted focus:outline-none focus:ring-2 focus:ring-admin-accent/50 focus:border-admin-accent">
+                </div>
+            </div>
         </div>
         <div class="p-6">
+            <div id="search-results" class="hidden mb-4 space-y-4"></div>
+            <div id="catalog-tree-wrap">
             @if(!empty($sections))
                 <ul class="tree space-y-0" id="catalog-tree">
                     @foreach($sections as $section)
@@ -44,6 +52,7 @@
                     @endif
                 </div>
             @endif
+            </div>
         </div>
     </div>
 
@@ -51,8 +60,12 @@
     <script>
     (function() {
         var childrenUrl = '{{ route("dealer.products.catalog-children") }}';
+        var searchUrl = '{{ route("dealer.products.search") }}';
         var tree = document.getElementById('catalog-tree');
-        if (!tree) return;
+        var searchInput = document.getElementById('catalog-search');
+        var searchResults = document.getElementById('search-results');
+        var catalogTreeWrap = document.getElementById('catalog-tree-wrap');
+        var searchDebounceTimer = null;
 
         function renderLoader(wrap) {
             wrap.innerHTML = '<div class="flex items-center gap-2 py-3 px-2 text-admin-muted text-sm"><svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Загрузка…</div>';
@@ -86,6 +99,70 @@
             return div.innerHTML;
         }
 
+        function runSearch(query) {
+            query = (query || '').trim();
+            if (query.length < 2) {
+                searchResults.classList.add('hidden');
+                searchResults.innerHTML = '';
+                if (catalogTreeWrap) catalogTreeWrap.classList.remove('hidden');
+                return;
+            }
+            searchResults.classList.remove('hidden');
+            searchResults.innerHTML = '<div class="flex items-center gap-2 py-4 text-admin-muted text-sm"><svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Поиск…</div>';
+            if (catalogTreeWrap) catalogTreeWrap.classList.add('hidden');
+            fetch(searchUrl + '?q=' + encodeURIComponent(query), {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    var products = data.products || [];
+                    var sections = data.sections || [];
+                    if (products.length === 0 && sections.length === 0) {
+                        searchResults.innerHTML = '<p class="text-admin-muted text-sm py-4">Ничего не найдено</p>';
+                        return;
+                    }
+                    var html = '';
+                    if (sections.length > 0) {
+                        html += '<div><h4 class="text-xs font-semibold text-admin-muted uppercase tracking-wide mb-3">Разделы</h4><ul class="space-y-2">';
+                        sections.forEach(function(s) {
+                            var pathHtml = (s.path || [s.name]).map(function(part) { return '<span class="text-admin-fg">' + escapeHtml(part) + '</span>'; }).join('<span class="text-admin-muted mx-1.5">›</span>');
+                            html += '<li class="py-2.5 px-4 rounded-xl bg-slate-50/60 hover:bg-slate-100/80 border border-transparent hover:border-slate-200 transition">' +
+                                '<div class="text-sm text-admin-fg font-medium">' + pathHtml + '</div></li>';
+                        });
+                        html += '</ul></div>';
+                    }
+                    if (products.length > 0) {
+                        html += '<div class="mt-6"><h4 class="text-xs font-semibold text-admin-muted uppercase tracking-wide mb-3">Товары</h4><ul class="space-y-2">';
+                        products.forEach(function(p) {
+                            var path = p.path || [p.name];
+                            var pathHtml = path.map(function(part, i) {
+                                var isLast = i === path.length - 1;
+                                return '<span class="' + (isLast ? 'text-admin-fg font-medium' : 'text-admin-muted') + '">' + escapeHtml(part) + '</span>';
+                            }).join('<span class="text-slate-300 mx-1.5 select-none">›</span>');
+                            html += '<li class="py-2.5 px-4 rounded-xl bg-slate-50/60 hover:bg-slate-100/80 border border-transparent hover:border-slate-200 transition">' +
+                                '<div class="text-sm">' + pathHtml + '</div></li>';
+                        });
+                        html += '</ul></div>';
+                    }
+                    searchResults.innerHTML = html;
+                })
+                .catch(function() {
+                    searchResults.innerHTML = '<p class="text-red-600 text-sm py-4">Ошибка загрузки</p>';
+                });
+        }
+
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchDebounceTimer);
+                var q = searchInput.value;
+                searchDebounceTimer = setTimeout(function() { runSearch(q); }, 350);
+            });
+            searchInput.addEventListener('search', function() {
+                clearTimeout(searchDebounceTimer);
+                runSearch(searchInput.value);
+            });
+        }
+
         function loadChildren(sectionId, wrap, level) {
             level = typeof level === 'number' ? level : 0;
             renderLoader(wrap);
@@ -112,7 +189,7 @@
                 });
         }
 
-        tree.addEventListener('click', function(e) {
+        if (tree) tree.addEventListener('click', function(e) {
             var btn = e.target.closest('.tree-toggle');
             if (!btn) return;
             var node = btn.closest('.tree-node');

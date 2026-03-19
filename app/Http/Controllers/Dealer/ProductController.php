@@ -53,4 +53,27 @@ class ProductController extends Controller
             return response()->json(['sections' => [], 'products' => []], 200);
         }
     }
+
+    /**
+     * Поиск товаров и разделов по запросу.
+     */
+    public function search(Request $request, Bitrix24CatalogService $catalog)
+    {
+        if (auth()->user()->must_change_password) {
+            return response()->json(['error' => 'Смените пароль'], 403);
+        }
+
+        $query = trim((string) $request->query('q', ''));
+        if (mb_strlen($query) < 2) {
+            return response()->json(['products' => [], 'sections' => []]);
+        }
+
+        try {
+            $data = $catalog->searchProductsAndSections($query, 25, 10);
+            return response()->json($data);
+        } catch (\Throwable $e) {
+            report($e);
+            return response()->json(['products' => [], 'sections' => []]);
+        }
+    }
 }

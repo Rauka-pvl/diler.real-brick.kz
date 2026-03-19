@@ -210,27 +210,33 @@
 
                 <div class="sm:col-span-2 border-t border-admin-border pt-6">
                     <h4 class="text-sm font-semibold text-admin-fg mb-4">Товары</h4>
-                    <p class="text-admin-muted text-sm mb-4">Раскройте раздел каталога и нажмите на товар, чтобы добавить его в объект. Укажите количество.</p>
+                    <p class="text-admin-muted text-sm mb-4">Поиск или дерево каталога — клик по товару добавляет в объект.</p>
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div class="bg-slate-50/80 rounded-xl border border-admin-border p-4 max-h-80 overflow-auto">
-                            <p class="text-xs text-admin-muted mb-2">Каталог (как в разделе Товары)</p>
-                            @if(!empty($sections))
-                                <ul class="tree space-y-0" id="object-catalog-tree">
-                                    @foreach($sections as $section)
-                                        <li class="tree-node object-tree-node" data-section-id="{{ $section['id'] }}" data-level="0" data-loaded="0">
-                                            <div class="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-slate-100 group" style="padding-left: 8px;">
-                                                <button type="button" class="tree-toggle p-0.5 rounded text-admin-muted hover:bg-slate-200 flex-shrink-0" aria-expanded="false">
-                                                    <svg class="w-4 h-4 transition-transform tree-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                                                </button>
-                                                <span class="font-medium text-admin-fg text-sm">{{ $section['name'] }}</span>
-                                            </div>
-                                            <div class="tree-children-wrap hidden border-l border-admin-border ml-3 pl-2" style="margin-left: 20px;" data-section-id="{{ $section['id'] }}"></div>
-                                        </li>
-                                    @endforeach
-                                </ul>
-                            @else
-                                <p class="text-admin-muted text-sm py-2">Разделы каталога не загружены.</p>
-                            @endif
+                        <div class="space-y-3">
+                            <div class="relative" id="object-product-search-wrap">
+                                <input type="search" id="object-product-search" autocomplete="off" placeholder="Поиск: Каталог › Раздел › Товар..."
+                                       class="w-full px-4 py-3 rounded-xl border border-admin-border focus:border-admin-accent focus:ring-2 focus:ring-admin-accent/20 outline-none">
+                                <div id="object-product-results" class="absolute z-20 left-0 right-0 top-full mt-1 bg-white border border-admin-border rounded-xl shadow-lg max-h-72 overflow-auto hidden"></div>
+                            </div>
+                            <div class="bg-slate-50/80 rounded-xl border border-admin-border p-4 max-h-80 overflow-auto" id="object-catalog-wrap">
+                                @if(!empty($sections))
+                                    <ul class="tree space-y-0" id="object-catalog-tree">
+                                        @foreach($sections as $section)
+                                            <li class="tree-node object-tree-node" data-section-id="{{ $section['id'] }}" data-level="0" data-loaded="0">
+                                                <div class="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-slate-100 group" style="padding-left: 8px;">
+                                                    <button type="button" class="tree-toggle p-0.5 rounded text-admin-muted hover:bg-slate-200 flex-shrink-0" aria-expanded="false">
+                                                        <svg class="w-4 h-4 transition-transform tree-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                                    </button>
+                                                    <span class="font-medium text-admin-fg text-sm">{{ $section['name'] }}</span>
+                                                </div>
+                                                <div class="tree-children-wrap hidden border-l border-admin-border ml-3 pl-2" style="margin-left: 20px;" data-section-id="{{ $section['id'] }}"></div>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                @else
+                                    <p class="text-admin-muted text-sm py-2">Разделы каталога не загружены.</p>
+                                @endif
+                            </div>
                         </div>
                         <div>
                             <p class="text-xs text-admin-muted mb-2">Выбранные товары</p>
@@ -245,7 +251,7 @@
                                     </thead>
                                     <tbody id="object-products-tbody">
                                         <tr id="object-products-empty" class="text-admin-muted text-sm">
-                                            <td colspan="3" class="py-4 px-3">Добавьте товары из каталога</td>
+                                            <td colspan="3" class="py-4 px-3">Добавьте товары из каталога или поиска</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -319,11 +325,15 @@
     })();
 
     (function() {
+        var searchUrl = '{{ route("dealer.products.search") }}';
         var childrenUrl = '{{ route("dealer.products.catalog-children") }}';
+        var searchInput = document.getElementById('object-product-search');
+        var resultsWrap = document.getElementById('object-product-results');
         var tree = document.getElementById('object-catalog-tree');
         var tbody = document.getElementById('object-products-tbody');
         var emptyRow = document.getElementById('object-products-empty');
         var productIndex = 0;
+        var debounceTimer = null;
 
         function escapeHtml(s) {
             if (!s) return '';
@@ -358,6 +368,55 @@
                 if (tbody.querySelectorAll('tr').length === 0 && emptyRow) tbody.appendChild(emptyRow);
             });
         }
+        function runSearch(q) {
+            q = (q || '').trim();
+            if (q.length < 2) {
+                if (resultsWrap) resultsWrap.classList.add('hidden');
+                return;
+            }
+            if (resultsWrap) {
+                resultsWrap.classList.remove('hidden');
+                resultsWrap.innerHTML = '<div class="px-4 py-3 text-admin-muted text-sm flex items-center gap-2"><svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Поиск…</div>';
+            }
+            fetch(searchUrl + '?q=' + encodeURIComponent(q), { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    var products = data.products || [];
+                    if (!resultsWrap) return;
+                    if (!products.length) {
+                        resultsWrap.innerHTML = '<div class="px-4 py-3 text-admin-muted text-sm">Ничего не найдено</div>';
+                        return;
+                    }
+                    resultsWrap.innerHTML = products.map(function(p) {
+                        var path = p.path || [p.name];
+                        var pathText = path.map(function(x) { return escapeHtml(x); }).join(' › ');
+                        return '<button type="button" class="w-full text-left px-4 py-2.5 hover:bg-slate-50 border-b border-admin-border last:border-0 transition product-pick-btn" data-id="' + escapeHtml(String(p.id)) + '" data-name="' + escapeHtml(p.name) + '">' +
+                            '<span class="text-sm text-admin-fg block">' + pathText + '</span></button>';
+                    }).join('');
+                    resultsWrap.querySelectorAll('.product-pick-btn').forEach(function(btn) {
+                        btn.addEventListener('click', function() {
+                            addProduct(btn.getAttribute('data-id'), btn.getAttribute('data-name'));
+                            if (searchInput) searchInput.value = '';
+                            resultsWrap.classList.add('hidden');
+                        });
+                    });
+                })
+                .catch(function() {
+                    if (resultsWrap) resultsWrap.innerHTML = '<div class="px-4 py-3 text-red-600 text-sm">Ошибка загрузки</div>';
+                });
+        }
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(function() { runSearch(searchInput.value); }, 300);
+            });
+            searchInput.addEventListener('focus', function() {
+                if ((searchInput.value || '').trim().length >= 2) runSearch(searchInput.value);
+            });
+        }
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#object-product-search-wrap') && resultsWrap) resultsWrap.classList.add('hidden');
+        });
 
         if (tree) {
             function renderLoader(wrap) {

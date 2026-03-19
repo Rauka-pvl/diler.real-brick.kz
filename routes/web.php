@@ -36,7 +36,8 @@ Route::get('/test', function () {
                 'select' => ['id', 'name', 'price', 'active', 'available', 'dateCreate', 'iblockId'],
                 'filter' => [
                     'active' => 'Y',
-                    'iblockId' => 16,
+                    'iblockId' => 14,
+                    '%name' => 'Көлденең бұрыштық элемент,  1 жинақ, 5 - Антик,  11 - Умбра / Угол Горизонтальный, 1 коллекция, 5 - Antic, 11 - Умбра',
                 ],
                 'order' => [
                     'name' => 'ASC',
@@ -97,6 +98,7 @@ Route::middleware(['auth', 'dealer'])->prefix('dealer')->name('dealer.')->group(
     Route::get('objects/clients-search', [DealerObjectController::class, 'searchClients'])->name('objects.clients-search');
     Route::patch('objects/{object}/stage', [DealerObjectController::class, 'updateStage'])->name('objects.update-stage');
     Route::resource('objects', DealerObjectController::class);
+    Route::get('products/search', [DealerProductController::class, 'search'])->name('products.search');
     Route::get('products/catalog-children', [DealerProductController::class, 'catalogChildren'])->name('products.catalog-children');
     Route::get('products', [DealerProductController::class, 'index'])->name('products.index');
     Route::get('promo-materials', [DealerPromoMaterialController::class, 'index'])->name('promo-materials.index');
