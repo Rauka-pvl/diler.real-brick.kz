@@ -1,25 +1,28 @@
 import './bootstrap';
 
-document.addEventListener('submit', (e) => {
-    const form = e.target;
-    if (!(form instanceof HTMLFormElement)) return;
-    if (form.hasAttribute('data-allow-double-submit')) return;
-    if (e.defaultPrevented) return;
+document.addEventListener(
+    'submit',
+    (e) => {
+        const form = e.target;
+        if (!(form instanceof HTMLFormElement)) return;
+        if (form.hasAttribute('data-allow-double-submit')) return;
 
-    if (form.dataset.formSubmitGuard === '1') {
-        e.preventDefault();
-        return;
-    }
-    form.dataset.formSubmitGuard = '1';
+        if (form.dataset.formSubmitGuard === '1') {
+            e.preventDefault();
+            return;
+        }
+        form.dataset.formSubmitGuard = '1';
 
-    form
-        .querySelectorAll(
-            'button[type="submit"], button:not([type]), input[type="submit"]'
-        )
-        .forEach((el) => {
-            el.disabled = true;
-        });
-});
+        form
+            .querySelectorAll(
+                'button[type="submit"], button:not([type]), input[type="submit"]'
+            )
+            .forEach((el) => {
+                el.disabled = true;
+            });
+    },
+    true
+);
 
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('[data-password-toggle]').forEach(btn => {

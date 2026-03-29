@@ -5,7 +5,7 @@
 
 @section('content')
     <div class="flex justify-between items-center mb-6">
-        <p class="text-admin-muted text-sm">Перетаскивайте карточки между колонками для смены стадии</p>
+        <p class="text-admin-muted text-sm">Активные объекты: перетаскивайте карточки между колонками для смены стадии</p>
         <a href="{{ route('dealer.objects.create') }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-admin-accent text-white font-medium hover:bg-admin-accent-hover transition shrink-0">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
@@ -43,6 +43,33 @@
             </div>
         @endforeach
     </div>
+
+    @if($specialObjects->isNotEmpty())
+        <div class="mt-10">
+            <h3 class="text-lg font-semibold text-admin-fg mb-4">Черновики и заявки</h3>
+            <div class="bg-white rounded-2xl border border-admin-border shadow-admin-card divide-y divide-admin-border">
+                @foreach($specialObjects as $obj)
+                    <div class="p-4 flex flex-wrap items-center gap-4 justify-between">
+                        <div class="min-w-0">
+                            <a href="{{ route('dealer.objects.show', $obj) }}" class="font-medium text-admin-fg hover:text-admin-accent truncate block">{{ $obj->name ?: 'Без названия' }}</a>
+                            @if($obj->address_locality)
+                                <p class="text-xs text-admin-muted mt-1">{{ $obj->address_locality }}</p>
+                            @endif
+                        </div>
+                        <div class="flex items-center gap-3 shrink-0">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium
+                                {{ $obj->isModerationPending() ? 'bg-amber-100 text-amber-800' : ($obj->isModerationRejected() ? 'bg-red-100 text-red-800' : 'bg-slate-100 text-slate-700') }}">
+                                {{ $obj->moderationStatusLabel() }}
+                            </span>
+                            @if($obj->isModerationDraft())
+                                <a href="{{ route('dealer.objects.edit', $obj) }}" class="text-sm text-admin-accent hover:underline">Редактировать</a>
+                            @endif
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
 
     <form id="stage-form" method="POST" class="hidden">
         @csrf

@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\ClientController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DealerController;
 use App\Http\Controllers\Admin\ObjectController as AdminObjectController;
+use App\Http\Controllers\Admin\ObjectModerationController;
 use App\Http\Controllers\Admin\DealerPackageController as AdminDealerPackageController;
 use App\Http\Controllers\Admin\PromoMaterialController as AdminPromoMaterialController;
 use App\Http\Controllers\Auth\LoginController;
@@ -84,6 +85,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::resource('clients', ClientController::class);
     Route::get('objects', [AdminObjectController::class, 'index'])->name('objects.index');
     Route::get('objects/{object}', [AdminObjectController::class, 'show'])->name('objects.show');
+    Route::get('moderation/objects', [ObjectModerationController::class, 'index'])->name('moderation.objects.index');
+    Route::get('moderation/objects/{object}', [ObjectModerationController::class, 'show'])->name('moderation.objects.show');
+    Route::post('moderation/objects/{object}/approve', [ObjectModerationController::class, 'approve'])->name('moderation.objects.approve');
+    Route::post('moderation/objects/{object}/reject', [ObjectModerationController::class, 'reject'])->name('moderation.objects.reject');
     Route::resource('promo-materials', AdminPromoMaterialController::class)->only(['index', 'create', 'store', 'destroy']);
     Route::get('dealer-package', AdminDealerPackageController::class)->name('dealer-package');
 });

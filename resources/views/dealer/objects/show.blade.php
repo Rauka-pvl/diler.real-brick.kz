@@ -4,30 +4,59 @@
 @section('heading', $obj->name ?: 'Объект')
 
 @section('content')
+    @if($obj->isModerationPending())
+        <div class="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-sm">
+            Объект на модерации у администратора. Редактирование и удаление недоступны до решения.
+        </div>
+    @elseif($obj->isModerationRejected())
+        <div class="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm">
+            Заявка отклонена администратором. Редактирование недоступно; вы можете удалить запись или просматривать данные.
+        </div>
+    @elseif($obj->isModerationDraft())
+        <div class="mb-6 p-4 rounded-xl bg-slate-50 border border-admin-border text-admin-fg text-sm">
+            Черновик: объект не на общей доске стадий. Можно редактировать и удалить.
+        </div>
+    @endif
+
+    @if($obj->duplicateOf)
+        <div class="mb-6 p-4 rounded-xl bg-slate-50 border border-admin-border text-sm text-admin-fg">
+            <span class="font-medium">Есть совпадение по адресу с объектом другого дилера.</span>
+            <span class="text-admin-muted block mt-1">{{ $obj->duplicateOf->formatAddressLine() }}</span>
+        </div>
+    @endif
+
     <div class="flex flex-wrap gap-3 mb-6">
-        <a href="{{ route('dealer.objects.edit', $obj) }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-admin-accent text-white font-medium hover:bg-admin-accent-hover transition">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-            Редактировать
-        </a>
+        @if($obj->isPublishedObject() || $obj->isModerationDraft())
+            <a href="{{ route('dealer.objects.edit', $obj) }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-admin-accent text-white font-medium hover:bg-admin-accent-hover transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                Редактировать
+            </a>
+        @endif
         <a href="{{ route('dealer.objects.index') }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-admin-border text-admin-fg font-medium hover:bg-slate-50 transition">К списку</a>
-        <form action="{{ route('dealer.objects.destroy', $obj) }}" method="POST" class="inline" onsubmit="return confirm('Удалить объект?');">
-            @csrf
-            @method('DELETE')
-            <button type="submit" class="px-5 py-2.5 rounded-xl border border-red-200 text-red-600 font-medium hover:bg-red-50 transition">Удалить</button>
-        </form>
+        @if(!$obj->isModerationPending())
+            <form action="{{ route('dealer.objects.destroy', $obj) }}" method="POST" class="inline" onsubmit="return confirm('Удалить объект?');">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="px-5 py-2.5 rounded-xl border border-red-200 text-red-600 font-medium hover:bg-red-50 transition">Удалить</button>
+            </form>
+        @endif
     </div>
 
     <div class="bg-white rounded-2xl border border-admin-border shadow-admin-card overflow-hidden">
         <div class="p-6 border-b border-admin-border bg-slate-50/50 flex flex-wrap items-center justify-between gap-4">
             <div>
                 <h3 class="text-lg font-semibold text-admin-fg">{{ $obj->name ?: 'Без названия' }}</h3>
-                <p class="text-sm text-admin-muted mt-1">
-                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium
-                        {{ $obj->stage === 'negotiations' ? 'bg-amber-100 text-amber-800' : ($obj->stage === 'contract_signed' ? 'bg-sky-100 text-sky-800' : 'bg-emerald-100 text-emerald-800') }}">
-                        {{ $obj->stage_label }}
-                    </span>
+                <p class="text-sm text-admin-muted mt-1 flex flex-wrap items-center gap-2">
+                    @if($obj->isPublishedObject())
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium
+                            {{ $obj->stage === 'negotiations' ? 'bg-amber-100 text-amber-800' : ($obj->stage === 'contract_signed' ? 'bg-sky-100 text-sky-800' : 'bg-emerald-100 text-emerald-800') }}">
+                            {{ $obj->stage_label }}
+                        </span>
+                    @else
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-200 text-slate-800">{{ $obj->moderationStatusLabel() }}</span>
+                    @endif
                     @if($obj->planned_delivery_date)
-                        <span class="ml-2">Поставка: {{ $obj->planned_delivery_date->format('d.m.Y') }}</span>
+                        <span>Поставка: {{ $obj->planned_delivery_date->format('d.m.Y') }}</span>
                     @endif
                 </p>
             </div>

@@ -7,6 +7,8 @@ use App\Models\Client;
 use App\Models\ProjectObject;
 use App\Models\ProjectObjectProduct;
 use App\Services\Bitrix24CatalogService;
+use App\Services\AddressMapCoherenceChecker;
+use App\Services\ObjectAddressDuplicateFinder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -26,6 +28,45 @@ class ObjectController extends Controller
         return ProjectObject::where('dealer_id', $this->getDealer()->id)->findOrFail($id);
     }
 
+    protected function assertDealerObjectEditable(ProjectObject $obj): void
+    {
+        if ($obj->isModerationPending()) {
+            abort(403, 'Объект ожидает решения администратора. Редактирование недоступно.');
+        }
+        if ($obj->isModerationRejected()) {
+            abort(403, 'Заявка отклонена. Редактирование недоступно.');
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     * @return array<string, mixed>
+     */
+    protected function addressFromValidated(array $validated): array
+    {
+        return [
+            'address_country' => $validated['address_country'] ?? null,
+            'address_locality' => $validated['address_locality'] ?? null,
+            'address_street' => $validated['address_street'] ?? null,
+            'address_house' => $validated['address_house'] ?? null,
+            'address_cadastral' => $validated['address_cadastral'] ?? null,
+        ];
+    }
+
+    protected function duplicateFlashPayload(ProjectObject $conflict): array
+    {
+        $conflict->loadMissing('dealer');
+        $d = $conflict->dealer;
+
+        return [
+            'object_id' => $conflict->id,
+            'object_name' => $conflict->name,
+            'address_line' => $conflict->formatAddressLine(),
+            'dealer_name' => $d?->name ?? '—',
+            'dealer_company' => $d?->company,
+        ];
+    }
+
     public function index(Request $request)
     {
         if (auth()->user()->must_change_password) {
@@ -38,15 +79,19 @@ class ObjectController extends Controller
             ->orderBy('updated_at', 'desc')
             ->get();
 
+        $published = $objects->filter(fn (ProjectObject $o) => $o->isPublishedObject());
+        $special = $objects->filter(fn (ProjectObject $o) => ! $o->isPublishedObject())->values();
+
         $byStage = [
-            ProjectObject::STAGE_NEGOTIATIONS => $objects->where('stage', ProjectObject::STAGE_NEGOTIATIONS)->values(),
-            ProjectObject::STAGE_CONTRACT_SIGNED => $objects->where('stage', ProjectObject::STAGE_CONTRACT_SIGNED)->values(),
-            ProjectObject::STAGE_COMPLETED => $objects->where('stage', ProjectObject::STAGE_COMPLETED)->values(),
+            ProjectObject::STAGE_NEGOTIATIONS => $published->where('stage', ProjectObject::STAGE_NEGOTIATIONS)->values(),
+            ProjectObject::STAGE_CONTRACT_SIGNED => $published->where('stage', ProjectObject::STAGE_CONTRACT_SIGNED)->values(),
+            ProjectObject::STAGE_COMPLETED => $published->where('stage', ProjectObject::STAGE_COMPLETED)->values(),
         ];
 
         return view('dealer.objects.index', [
             'byStage' => $byStage,
             'stages' => ProjectObject::stageOptions(),
+            'specialObjects' => $special,
         ]);
     }
 
@@ -132,9 +177,31 @@ class ObjectController extends Controller
             Client::where('dealer_id', $dealer->id)->findOrFail($validated['client_id']);
         }
 
+        $addressMapError = app(AddressMapCoherenceChecker::class)->validate($validated);
+        if ($addressMapError !== null) {
+            return back()->withInput()->withErrors(['address_map' => $addressMapError]);
+        }
+
         $validated['dealer_id'] = $dealer->id;
         $productItems = $validated['product_items'] ?? [];
         unset($validated['title_page'], $validated['visualization'], $validated['product_items']);
+
+        $finder = app(ObjectAddressDuplicateFinder::class);
+        $conflict = $finder->findConflict($dealer->id, $this->addressFromValidated($validated), null);
+        $res = $request->input('duplicate_resolution');
+        if ($conflict && ! in_array($res, ['draft', 'moderation'], true)) {
+            return back()->withInput()->with('address_duplicate', $this->duplicateFlashPayload($conflict));
+        }
+
+        if ($conflict) {
+            $validated['duplicate_of_project_object_id'] = $conflict->id;
+            $validated['moderation_status'] = $res === 'moderation'
+                ? ProjectObject::MODERATION_PENDING
+                : ProjectObject::MODERATION_DRAFT;
+        } else {
+            $validated['duplicate_of_project_object_id'] = null;
+            $validated['moderation_status'] = null;
+        }
 
         $obj = ProjectObject::create($validated);
 
@@ -153,7 +220,14 @@ class ObjectController extends Controller
             $obj->update(['visualization_path' => $request->file('visualization')->store('project-objects', 'public')]);
         }
 
-        return redirect()->route('dealer.objects.index')->with('success', 'Объект создан.');
+        $msg = 'Объект создан.';
+        if ($obj->isModerationPending()) {
+            $msg = 'Заявка отправлена администратору. До утверждения редактирование и удаление недоступны.';
+        } elseif ($obj->isModerationDraft()) {
+            $msg = 'Объект сохранён как черновик — можно редактировать и удалить.';
+        }
+
+        return redirect()->route('dealer.objects.index')->with('success', $msg);
     }
 
     public function show(int $object)
@@ -163,7 +237,7 @@ class ObjectController extends Controller
         }
 
         $obj = $this->findObject($object);
-        $obj->load(['client', 'objectProducts']);
+        $obj->load(['client', 'objectProducts', 'duplicateOf.dealer']);
 
         return view('dealer.objects.show', compact('obj'));
     }
@@ -175,6 +249,7 @@ class ObjectController extends Controller
         }
 
         $obj = $this->findObject($object);
+        $this->assertDealerObjectEditable($obj);
         $obj->load(['client', 'objectProducts']);
         $dealer = $this->getDealer();
         $allClients = Client::where('dealer_id', $dealer->id)->orderBy('name')->get()
@@ -191,6 +266,7 @@ class ObjectController extends Controller
         }
 
         $obj = $this->findObject($object);
+        $this->assertDealerObjectEditable($obj);
         $dealer = $this->getDealer();
         $request->merge(['client_id' => $request->input('client_id') ?: null]);
 
@@ -239,6 +315,28 @@ class ObjectController extends Controller
             $validated['client_id'] = null;
         }
 
+        $addressMapError = app(AddressMapCoherenceChecker::class)->validate($validated);
+        if ($addressMapError !== null) {
+            return back()->withInput()->withErrors(['address_map' => $addressMapError]);
+        }
+
+        $finder = app(ObjectAddressDuplicateFinder::class);
+        $conflict = $finder->findConflict($dealer->id, $this->addressFromValidated($validated), $obj->id);
+        $res = $request->input('duplicate_resolution');
+        if ($conflict && ! in_array($res, ['draft', 'moderation'], true)) {
+            return back()->withInput()->with('address_duplicate', $this->duplicateFlashPayload($conflict));
+        }
+
+        if ($conflict) {
+            $validated['duplicate_of_project_object_id'] = $conflict->id;
+            $validated['moderation_status'] = $res === 'moderation'
+                ? ProjectObject::MODERATION_PENDING
+                : ProjectObject::MODERATION_DRAFT;
+        } else {
+            $validated['duplicate_of_project_object_id'] = null;
+            $validated['moderation_status'] = null;
+        }
+
         $productItems = $validated['product_items'] ?? [];
         unset($validated['title_page'], $validated['visualization'], $validated['product_items']);
         $obj->update($validated);
@@ -265,7 +363,14 @@ class ObjectController extends Controller
             $obj->update(['visualization_path' => $request->file('visualization')->store('project-objects', 'public')]);
         }
 
-        return redirect()->route('dealer.objects.index')->with('success', 'Объект обновлён.');
+        $msg = 'Объект обновлён.';
+        if ($obj->isModerationPending()) {
+            $msg = 'Заявка отправлена администратору. До решения редактирование и удаление недоступны.';
+        } elseif ($obj->isModerationDraft()) {
+            $msg = 'Данные сохранены. Объект остаётся черновиком — доступны редактирование и удаление.';
+        }
+
+        return redirect()->route('dealer.objects.index')->with('success', $msg);
     }
 
     public function destroy(int $object)
@@ -275,6 +380,11 @@ class ObjectController extends Controller
         }
 
         $obj = $this->findObject($object);
+        if ($obj->isModerationPending()) {
+            return redirect()
+                ->route('dealer.objects.index')
+                ->with('error', 'Нельзя удалить объект, пока заявка не рассмотрена администратором.');
+        }
         if ($obj->title_page_path) {
             Storage::disk('public')->delete($obj->title_page_path);
         }
@@ -293,6 +403,9 @@ class ObjectController extends Controller
         }
 
         $obj = $this->findObject($object);
+        if (! $obj->isPublishedObject()) {
+            return response()->json(['error' => 'Смена стадии доступна только для активных объектов.'], 403);
+        }
         $request->validate(['stage' => ['required', 'in:negotiations,contract_signed,completed']]);
         $obj->update(['stage' => $request->stage]);
 

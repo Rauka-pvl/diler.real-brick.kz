@@ -35,6 +35,11 @@ return [
         ],
     ],
 
+    'nominatim' => [
+        'user_agent' => env('NOMINATIM_USER_AGENT', 'RealBrick-Diller/1.0 (object address check)'),
+        'max_distance_meters' => (int) env('ADDRESS_MAP_MAX_DISTANCE_METERS', 2500),
+    ],
+
     'bitrix24' => [
         'rest_url' => env('BITRIX24_CATALOG_URL', 'https://realbrick.bitrix24.kz/rest/152/ykk17l6z3bucehjf'),
         'iblock_id' => (int) env('BITRIX24_CATALOG_IBLOCK_ID', 14),

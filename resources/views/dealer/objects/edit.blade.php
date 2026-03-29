@@ -5,9 +5,10 @@
 
 @section('content')
     <div class="w-full max-w-4xl">
-        <form action="{{ route('dealer.objects.update', $obj) }}" method="POST" enctype="multipart/form-data" class="bg-white rounded-2xl border border-admin-border shadow-admin-card p-6 space-y-8">
+        <form id="object-form" action="{{ route('dealer.objects.update', $obj) }}" method="POST" enctype="multipart/form-data" class="bg-white rounded-2xl border border-admin-border shadow-admin-card p-6 space-y-8">
             @csrf
             @method('PUT')
+            <input type="hidden" name="duplicate_resolution" id="duplicate_resolution" value="{{ old('duplicate_resolution', '') }}">
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div class="sm:col-span-2">
@@ -88,8 +89,11 @@
                 </div>
 
                 <div class="sm:col-span-2 border-t border-admin-border pt-6">
+                    @error('address_map')
+                        <div class="mb-4 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">{{ $message }}</div>
+                    @enderror
                     <h4 class="text-sm font-semibold text-admin-fg mb-4">Карта объекта</h4>
-                    <p class="text-admin-muted text-sm mb-3">Найдите адрес или кликните на карте, чтобы поставить точку объекта.</p>
+                    <p class="text-admin-muted text-sm mb-3">Найдите адрес через поиск ниже и выберите точку из списка — так адрес в полях и метка на карте совпадут. Либо сначала заполните адрес вручную, затем поставьте метку на том же месте.</p>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-2">
                         <input type="text" id="map_city_search" placeholder="Город (необязательно)..." class="px-4 py-3 rounded-xl border border-admin-border focus:border-admin-accent focus:ring-2 focus:ring-admin-accent/20 outline-none">
                         <div class="sm:col-span-2 flex flex-wrap gap-3">
@@ -286,6 +290,7 @@
                 <button type="submit" class="px-5 py-2.5 rounded-xl bg-admin-accent text-white font-medium hover:bg-admin-accent-hover transition">Сохранить</button>
                 <a href="{{ route('dealer.objects.show', $obj) }}" class="px-5 py-2.5 rounded-xl border border-admin-border text-admin-fg font-medium hover:bg-slate-50 transition">Отмена</a>
             </div>
+            @include('dealer.objects._duplicate-address-modal')
         </form>
     </div>
 
@@ -363,9 +368,11 @@
             div.textContent = s;
             return div.innerHTML;
         }
-        function addProduct(bitrixId, productName) {
+        function addProduct(bitrixId, productName, qty) {
             if (!bitrixId || !productName) return;
             var sid = String(bitrixId);
+            var qval = (qty != null && !isNaN(parseFloat(qty))) ? parseFloat(qty) : 1;
+            if (qval < 0.01) qval = 1;
             var rows = tbody.querySelectorAll('tr');
             for (var i = 0; i < rows.length; i++) {
                 var inp = rows[i].querySelector('input[name*="[bitrix_product_id]"]');
@@ -382,7 +389,7 @@
             tr.innerHTML = '<input type="hidden" name="product_items[' + productIndex + '][bitrix_product_id]" value="' + escapeHtml(String(bitrixId)) + '">' +
                 '<input type="hidden" name="product_items[' + productIndex + '][product_name]" value="' + escapeHtml(productName) + '">' +
                 '<td class="py-2 px-3 text-admin-fg">' + escapeHtml(productName) + '</td>' +
-                '<td class="py-2 px-3"><input type="number" name="product_items[' + productIndex + '][quantity]" value="1" min="0.01" step="0.01" class="w-full px-2 py-1.5 rounded border border-admin-border text-sm"></td>' +
+                '<td class="py-2 px-3"><input type="number" name="product_items[' + productIndex + '][quantity]" value="' + qval + '" min="0.01" step="0.01" class="w-full px-2 py-1.5 rounded border border-admin-border text-sm"></td>' +
                 '<td class="py-2 px-1"><button type="button" class="object-product-remove p-1.5 rounded text-admin-muted hover:bg-red-50 hover:text-red-600" title="Удалить">&times;</button></td>';
             tbody.appendChild(tr);
             productIndex++;
@@ -548,6 +555,22 @@
         map.on('click', function(e) {
             setMarker(e.latlng.lat, e.latlng.lng);
         });
+        function applyFillFromPick(btn) {
+            var raw = btn.getAttribute('data-pick');
+            if (!raw) return;
+            try {
+                var p = JSON.parse(decodeURIComponent(raw));
+                var locIn = document.getElementById('address_locality');
+                var strIn = document.getElementById('address_street');
+                var hIn = document.getElementById('address_house');
+                var ctry = document.getElementById('address_country');
+                if (locIn && p.locality) locIn.value = p.locality;
+                if (strIn && p.road) strIn.value = p.road;
+                if (hIn && p.house) hIn.value = p.house;
+                if (ctry && p.country) ctry.value = p.country;
+                if (cityInput && p.locality) cityInput.value = p.locality;
+            } catch (err) {}
+        }
         function showResults(items) {
             if (!resultsWrap) return;
             if (!items.length) {
@@ -559,7 +582,11 @@
                 var name = (it.display_name || '').replace(/</g, '&lt;');
                 var a = it.address || {};
                 var city = a.city || a.town || a.village || a.municipality || a.state || '';
-                return '<button type="button" class="w-full text-left px-4 py-3 hover:bg-slate-50 border-b border-admin-border last:border-0" data-lat="' + it.lat + '" data-lng="' + it.lon + '" data-city="' + city.replace(/</g, '&lt;') + '"><div class="text-sm text-admin-fg">' + name + '</div></button>';
+                var road = a.road || a.pedestrian || '';
+                var house = a.house_number || '';
+                var country = a.country || '';
+                var pick = encodeURIComponent(JSON.stringify({ locality: city, road: road, house: house, country: country }));
+                return '<button type="button" class="w-full text-left px-4 py-3 hover:bg-slate-50 border-b border-admin-border last:border-0" data-lat="' + it.lat + '" data-lng="' + it.lon + '" data-pick="' + pick + '"><div class="text-sm text-admin-fg">' + name + '</div></button>';
             }).join('');
             resultsWrap.classList.remove('hidden');
         }
@@ -586,14 +613,13 @@
             resultsWrap.addEventListener('click', function(e) {
                 var btn = e.target.closest('button[data-lat][data-lng]');
                 if (!btn) return;
+                applyFillFromPick(btn);
                 var lat = parseFloat(btn.getAttribute('data-lat'));
                 var lng = parseFloat(btn.getAttribute('data-lng'));
-                var city = btn.getAttribute('data-city') || '';
                 if (!isNaN(lat) && !isNaN(lng)) {
                     map.setView([lat, lng], 16);
                     setMarker(lat, lng);
                 }
-                if (cityInput && city && !cityInput.value) cityInput.value = city;
                 hideResults();
             });
         }

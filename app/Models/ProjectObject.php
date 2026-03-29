@@ -15,6 +15,12 @@ class ProjectObject extends Model
     public const INTERMEDIARY_ARCHITECT = 'architect';
     public const INTERMEDIARY_DESIGNER = 'designer';
 
+    public const MODERATION_DRAFT = 'draft';
+
+    public const MODERATION_PENDING = 'pending_moderation';
+
+    public const MODERATION_REJECTED = 'rejected';
+
     protected $table = 'project_objects';
 
     protected $fillable = [
@@ -48,6 +54,8 @@ class ProjectObject extends Model
         'intermediary_percent',
         'competing_materials',
         'stage',
+        'moderation_status',
+        'duplicate_of_project_object_id',
         'planned_delivery_date',
         'title_page_path',
         'visualization_path',
@@ -73,6 +81,57 @@ class ProjectObject extends Model
     public function objectProducts()
     {
         return $this->hasMany(ProjectObjectProduct::class, 'project_object_id');
+    }
+
+    public function duplicateOf()
+    {
+        return $this->belongsTo(self::class, 'duplicate_of_project_object_id');
+    }
+
+    public function isPublishedObject(): bool
+    {
+        return $this->moderation_status === null;
+    }
+
+    public function isModerationDraft(): bool
+    {
+        return $this->moderation_status === self::MODERATION_DRAFT;
+    }
+
+    public function isModerationPending(): bool
+    {
+        return $this->moderation_status === self::MODERATION_PENDING;
+    }
+
+    public function isModerationRejected(): bool
+    {
+        return $this->moderation_status === self::MODERATION_REJECTED;
+    }
+
+    public function moderationStatusLabel(): ?string
+    {
+        return match ($this->moderation_status) {
+            self::MODERATION_DRAFT => 'Черновик',
+            self::MODERATION_PENDING => 'На модерации',
+            self::MODERATION_REJECTED => 'Заявка отклонена',
+            default => null,
+        };
+    }
+
+    public function formatAddressLine(): string
+    {
+        $parts = array_filter([
+            $this->address_country,
+            $this->address_locality,
+            $this->address_street,
+            $this->address_house,
+        ]);
+        $line = implode(', ', $parts);
+        if ($this->address_cadastral) {
+            $line .= ($line !== '' ? '; ' : '') . 'кад. ' . $this->address_cadastral;
+        }
+
+        return $line !== '' ? $line : '—';
     }
 
     public static function stageOptions(): array
